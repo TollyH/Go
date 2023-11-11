@@ -2,7 +2,7 @@
 using System;
 using System.Windows.Media;
 
-namespace Shogi
+namespace Go
 {
     [Serializable]
     public class Settings

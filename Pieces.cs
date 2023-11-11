@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 
-namespace Shogi.Pieces
+namespace Go.Pieces
 {
     public abstract class Piece
     {
@@ -61,7 +61,7 @@ namespace Shogi.Pieces
         public abstract HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality);
 
         /// <summary>
-        /// Create a clone of a shogi piece, allowing modification of the clone without affecting the original
+        /// Create a clone of a go piece, allowing modification of the clone without affecting the original
         /// </summary>
         public abstract Piece Clone();
 

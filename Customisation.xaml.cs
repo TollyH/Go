@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 
-namespace Shogi
+namespace Go
 {
     /// <summary>
     /// Interaction logic for Customisation.xaml

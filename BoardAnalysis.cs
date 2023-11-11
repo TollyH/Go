@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Shogi
+namespace Go
 {
     public static class BoardAnalysis
     {
@@ -225,7 +225,7 @@ namespace Shogi
         /// A <see cref="double"/> representing the total piece value of the game.
         /// Positive means sente has stronger material, negative means gote does.
         /// </returns>
-        public static double CalculateGameValue(ShogiGame game)
+        public static double CalculateGameValue(GoGame game)
         {
             double inHandTotal = 0;
             foreach ((Type dropType, int count) in game.SentePieceDrops)
@@ -271,7 +271,7 @@ namespace Shogi
         /// Use <see cref="EvaluatePossibleMoves"/> to find the best possible move in the current state of the game
         /// </summary>
         /// <param name="maxDepth">The maximum number of half-moves in the future to search</param>
-        public static async Task<PossibleMove> EstimateBestPossibleMove(ShogiGame game, int maxDepth, CancellationToken cancellationToken)
+        public static async Task<PossibleMove> EstimateBestPossibleMove(GoGame game, int maxDepth, CancellationToken cancellationToken)
         {
             PossibleMove[] moves = await EvaluatePossibleMoves(game, maxDepth, cancellationToken);
             PossibleMove bestMove = new(default, default,
@@ -313,7 +313,7 @@ namespace Shogi
         /// </summary>
         /// <param name="maxDepth">The maximum number of half-moves in the future to search</param>
         /// <returns>An array of all possible moves, with information on board value and ability to checkmate</returns>
-        public static async Task<PossibleMove[]> EvaluatePossibleMoves(ShogiGame game, int maxDepth, CancellationToken cancellationToken)
+        public static async Task<PossibleMove[]> EvaluatePossibleMoves(GoGame game, int maxDepth, CancellationToken cancellationToken)
         {
             ConcurrentBag<PossibleMove> possibleMoves = new();
             int remainingThreads = 0;
@@ -336,7 +336,7 @@ namespace Shogi
                             remainingThreads++;
                             Point promotionPosition = piece.Position;
                             Point promotionMove = validMove;
-                            ShogiGame promotionGameClone = game.Clone();
+                            GoGame promotionGameClone = game.Clone();
                             List<(Point, Point, bool)> promotionLine = new() { (piece.Position, validMove, true) };
                             _ = promotionGameClone.MovePiece(piece.Position, validMove, true,
                                 doPromotion: true, updateMoveText: false);
@@ -362,7 +362,7 @@ namespace Shogi
                             remainingThreads++;
                             Point thisPosition = piece.Position;
                             Point thisValidMove = validMove;
-                            ShogiGame gameClone = game.Clone();
+                            GoGame gameClone = game.Clone();
                             List<(Point, Point, bool)> thisLine = new() { (piece.Position, validMove, false) };
                             _ = gameClone.MovePiece(piece.Position, validMove, true,
                                 doPromotion: false, updateMoveText: false);
@@ -400,8 +400,8 @@ namespace Shogi
                             {
                                 remainingThreads++;
                                 Point thisDropPoint = pt;
-                                Point thisDropSource = ShogiGame.PieceDropSources[dropType];
-                                ShogiGame gameClone = game.Clone();
+                                Point thisDropSource = GoGame.PieceDropSources[dropType];
+                                GoGame gameClone = game.Clone();
                                 List<(Point, Point, bool)> thisLine = new() { (thisDropSource, thisDropPoint, false) };
                                 _ = gameClone.MovePiece(thisDropSource, thisDropPoint, true,
                                     doPromotion: false, updateMoveText: false);
@@ -441,12 +441,12 @@ namespace Shogi
             return possibleMoves.ToArray();
         }
 
-        private static HashSet<Point> GetValidMovesForEval(ShogiGame game, Pieces.Piece piece)
+        private static HashSet<Point> GetValidMovesForEval(GoGame game, Pieces.Piece piece)
         {
             return piece.GetValidMoves(game.Board, true);
         }
 
-        private static PossibleMove MinimaxMove(ShogiGame game, double alpha, double beta, int depth, int maxDepth,
+        private static PossibleMove MinimaxMove(GoGame game, double alpha, double beta, int depth, int maxDepth,
             List<(Point, Point, bool)> currentLine, CancellationToken cancellationToken)
         {
             (_, Point lastMoveSrc, Point lastMoveDst, _, _) = game.Moves.Last();
@@ -501,7 +501,7 @@ namespace Shogi
                         }
                         foreach (bool doPromotion in availablePromotions)
                         {
-                            ShogiGame gameClone = game.Clone();
+                            GoGame gameClone = game.Clone();
                             List<(Point, Point, bool)> newLine = new(currentLine) { (piece.Position, validMove, doPromotion) };
                             _ = gameClone.MovePiece(piece.Position, validMove, true,
                                 doPromotion: doPromotion, updateMoveText: false);
@@ -569,9 +569,9 @@ namespace Shogi
                             Point pt = new(x, y);
                             if (game.IsDropPossible(dropType, pt))
                             {
-                                ShogiGame gameClone = game.Clone();
+                                GoGame gameClone = game.Clone();
                                 Point dropPoint = pt;
-                                Point dropSource = ShogiGame.PieceDropSources[dropType];
+                                Point dropSource = GoGame.PieceDropSources[dropType];
                                 List<(Point, Point, bool)> newLine = new(currentLine) { (dropSource, dropPoint, false) };
                                 _ = gameClone.MovePiece(dropSource, dropPoint, true,
                                     doPromotion: true, updateMoveText: false);

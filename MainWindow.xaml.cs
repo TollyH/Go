@@ -11,14 +11,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Shogi
+namespace Go
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        private ShogiGame game = new(false);
+        private GoGame game = new(false);
         private readonly Settings config;
 
         private Pieces.Piece? grabbedPiece = null;
@@ -48,15 +48,15 @@ namespace Shogi
 
         public MainWindow()
         {
-            string jsonPath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shogi-settings.json");
+            string jsonPath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "go-settings.json");
             config = File.Exists(jsonPath)
                 ? JsonConvert.DeserializeObject<Settings>(File.ReadAllText(jsonPath)) ?? new Settings()
                 : new Settings();
 
             InitializeComponent();
 
-            shogiBoardBackground.Background = new SolidColorBrush(config.BoardColor);
-            miniShogiBoardBackground.Background = new SolidColorBrush(config.BoardColor);
+            goBoardBackground.Background = new SolidColorBrush(config.BoardColor);
+            miniGoBoardBackground.Background = new SolidColorBrush(config.BoardColor);
             flipBoardItem.IsChecked = config.FlipBoard;
             updateEvalAfterBotItem.IsChecked = config.UpdateEvalAfterBot;
             foreach (MenuItem item in pieceSetItem.Items)
@@ -75,16 +75,16 @@ namespace Shogi
             {
                 return;
             }
-            shogiGameCanvas.Children.Clear();
+            goGameCanvas.Children.Clear();
             pieceViews.Clear();
-            shogiBoardBackground.Children.Remove(sizeReference);
-            miniShogiBoardBackground.Children.Remove(sizeReference);
+            goBoardBackground.Children.Remove(sizeReference);
+            miniGoBoardBackground.Children.Remove(sizeReference);
 
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnSente && !goteIsComputer) || (senteIsComputer && !goteIsComputer));
-            bool minishogi = game.Board.GetLength(0) == 5;
+            bool minigo = game.Board.GetLength(0) == 5;
 
-            tileWidth = shogiGameCanvas.ActualWidth / game.Board.GetLength(0);
-            tileHeight = shogiGameCanvas.ActualHeight / game.Board.GetLength(1);
+            tileWidth = goGameCanvas.ActualWidth / game.Board.GetLength(0);
+            tileHeight = goGameCanvas.ActualHeight / game.Board.GetLength(1);
 
             foreach (Grid dropItem in senteDropsPanel.Children)
             {
@@ -96,7 +96,7 @@ namespace Shogi
                 if (game.CurrentTurnSente)
                 {
                     if (currentBestMove is not null && currentBestMove.Value.Source.X == -1
-                        && ShogiGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
+                        && GoGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
                     {
                         dropBackground = new SolidColorBrush(config.BestMoveSourceColor);
                     }
@@ -130,7 +130,7 @@ namespace Shogi
                 if (!game.CurrentTurnSente)
                 {
                     if (currentBestMove is not null && currentBestMove.Value.Source.X == -1
-                        && ShogiGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
+                        && GoGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
                     {
                         dropBackground = new SolidColorBrush(config.BestMoveSourceColor);
                     }
@@ -222,17 +222,17 @@ namespace Shogi
                 }
             }
 
-            if (minishogi)
+            if (minigo)
             {
-                shogiBoardBackground.Visibility = Visibility.Collapsed;
-                miniShogiBoardBackground.Visibility = Visibility.Visible;
-                _ = miniShogiBoardBackground.Children.Add(sizeReference);
+                goBoardBackground.Visibility = Visibility.Collapsed;
+                miniGoBoardBackground.Visibility = Visibility.Visible;
+                _ = miniGoBoardBackground.Children.Add(sizeReference);
             }
             else
             {
-                shogiBoardBackground.Visibility = Visibility.Visible;
-                miniShogiBoardBackground.Visibility = Visibility.Collapsed;
-                _ = shogiBoardBackground.Children.Add(sizeReference);
+                goBoardBackground.Visibility = Visibility.Visible;
+                miniGoBoardBackground.Visibility = Visibility.Collapsed;
+                _ = goBoardBackground.Children.Add(sizeReference);
             }
 
             movesPanel.Children.Clear();
@@ -263,7 +263,7 @@ namespace Shogi
                     Height = tileHeight,
                     Fill = new SolidColorBrush(config.CheckMateHighlightColor)
                 };
-                _ = shogiGameCanvas.Children.Add(mateHighlight);
+                _ = goGameCanvas.Children.Add(mateHighlight);
                 Canvas.SetBottom(mateHighlight, (boardFlipped ? boardMaxY - kingPosition.Y : kingPosition.Y) * tileHeight);
                 Canvas.SetLeft(mateHighlight, (boardFlipped ? boardMaxX - kingPosition.X : kingPosition.X) * tileWidth);
             }
@@ -280,7 +280,7 @@ namespace Shogi
                         Height = tileHeight,
                         Fill = new SolidColorBrush(config.LastMoveSourceColor)
                     };
-                    _ = shogiGameCanvas.Children.Add(sourceMoveHighlight);
+                    _ = goGameCanvas.Children.Add(sourceMoveHighlight);
                     Canvas.SetBottom(sourceMoveHighlight, (boardFlipped ? boardMaxY - lastMoveSource.Y : lastMoveSource.Y) * tileHeight);
                     Canvas.SetLeft(sourceMoveHighlight, (boardFlipped ? boardMaxX - lastMoveSource.X : lastMoveSource.X) * tileWidth);
                 }
@@ -291,7 +291,7 @@ namespace Shogi
                     Height = tileHeight,
                     Fill = new SolidColorBrush(config.LastMoveDestinationColor)
                 };
-                _ = shogiGameCanvas.Children.Add(destinationMoveHighlight);
+                _ = goGameCanvas.Children.Add(destinationMoveHighlight);
                 Canvas.SetBottom(destinationMoveHighlight, (boardFlipped ? boardMaxY - lastMoveDestination.Y : lastMoveDestination.Y) * tileHeight);
                 Canvas.SetLeft(destinationMoveHighlight, (boardFlipped ? boardMaxX - lastMoveDestination.X : lastMoveDestination.X) * tileWidth);
 
@@ -309,7 +309,7 @@ namespace Shogi
                         Height = tileHeight,
                         Fill = new SolidColorBrush(config.BestMoveSourceColor)
                     };
-                    _ = shogiGameCanvas.Children.Add(bestMoveSrcHighlight);
+                    _ = goGameCanvas.Children.Add(bestMoveSrcHighlight);
                     Canvas.SetBottom(bestMoveSrcHighlight,
                         (boardFlipped ? boardMaxY - currentBestMove.Value.Source.Y : currentBestMove.Value.Source.Y) * tileHeight);
                     Canvas.SetLeft(bestMoveSrcHighlight,
@@ -322,7 +322,7 @@ namespace Shogi
                     Height = tileHeight,
                     Fill = new SolidColorBrush(config.BestMoveDestinationColor)
                 };
-                _ = shogiGameCanvas.Children.Add(bestMoveDstHighlight);
+                _ = goGameCanvas.Children.Add(bestMoveDstHighlight);
                 Canvas.SetBottom(bestMoveDstHighlight,
                     (boardFlipped ? boardMaxY - currentBestMove.Value.Destination.Y : currentBestMove.Value.Destination.Y) * tileHeight);
                 Canvas.SetLeft(bestMoveDstHighlight,
@@ -349,7 +349,7 @@ namespace Shogi
                         Height = tileHeight,
                         Fill = fillBrush
                     };
-                    _ = shogiGameCanvas.Children.Add(newRect);
+                    _ = goGameCanvas.Children.Add(newRect);
                     Canvas.SetBottom(newRect, (boardFlipped ? boardMaxY - validMove.Y : validMove.Y) * tileHeight);
                     Canvas.SetLeft(newRect, (boardFlipped ? boardMaxX - validMove.X : validMove.X) * tileWidth);
                 }
@@ -369,7 +369,7 @@ namespace Shogi
                                 Height = tileHeight,
                                 Fill = new SolidColorBrush(config.AvailableMoveColor)
                             };
-                            _ = shogiGameCanvas.Children.Add(newRect);
+                            _ = goGameCanvas.Children.Add(newRect);
                             Canvas.SetBottom(newRect, (boardFlipped ? boardMaxY - y : y) * tileHeight);
                             Canvas.SetLeft(newRect, (boardFlipped ? boardMaxX - x : x) * tileWidth);
                         }
@@ -407,7 +407,7 @@ namespace Shogi
                         };
                         RenderOptions.SetBitmapScalingMode(newPiece, BitmapScalingMode.HighQuality);
                         pieceViews[piece] = newPiece;
-                        _ = shogiGameCanvas.Children.Add(newPiece);
+                        _ = goGameCanvas.Children.Add(newPiece);
                         Canvas.SetBottom(newPiece, (boardFlipped ? boardMaxY - y : y) * tileHeight);
                         Canvas.SetLeft(newPiece, (boardFlipped ? boardMaxX - x : x) * tileWidth);
                     }
@@ -423,7 +423,7 @@ namespace Shogi
                     Width = tileWidth * 0.8,
                     Height = tileHeight * 0.8
                 };
-                _ = shogiGameCanvas.Children.Add(ellipse);
+                _ = goGameCanvas.Children.Add(ellipse);
                 Canvas.SetBottom(ellipse, ((boardFlipped ? boardMaxY - square.Y : square.Y) * tileHeight) + (tileHeight * 0.1));
                 Canvas.SetLeft(ellipse, (boardFlipped ? boardMaxX - square.X : square.X) * tileWidth + (tileWidth * 0.1));
             }
@@ -445,7 +445,7 @@ namespace Shogi
                     Y1 = (boardFlipped ? lineStart.Y : boardMaxY - lineStart.Y) * tileHeight + (tileHeight / 2),
                     Y2 = (boardFlipped ? lineEnd.Y : boardMaxY - lineEnd.Y) * tileHeight + (tileHeight / 2)
                 };
-                _ = shogiGameCanvas.Children.Add(line);
+                _ = goGameCanvas.Children.Add(line);
             }
         }
 
@@ -461,7 +461,7 @@ namespace Shogi
                 Mouse.OverrideCursor = Cursors.ScrollAll;
                 return;
             }
-            Pieces.Piece? checkPiece = GetPieceAtCanvasPoint(Mouse.GetPosition(shogiGameCanvas));
+            Pieces.Piece? checkPiece = GetPieceAtCanvasPoint(Mouse.GetPosition(goGameCanvas));
             if (checkPiece is not null && ((checkPiece.IsSente && game.CurrentTurnSente && !senteIsComputer)
                 || (!checkPiece.IsSente && !game.CurrentTurnSente && !goteIsComputer)))
             {
@@ -518,7 +518,7 @@ namespace Shogi
             }
 
             string convertedBestLine = "";
-            ShogiGame moveStringGenerator = game.Clone();
+            GoGame moveStringGenerator = game.Clone();
             foreach ((System.Drawing.Point source, System.Drawing.Point destination, bool doPromotion) in bestMove.Value.BestLine)
             {
                 _ = moveStringGenerator.MovePiece(source, destination, true, doPromotion);
@@ -533,7 +533,7 @@ namespace Shogi
         private async Task<BoardAnalysis.PossibleMove> GetEngineMove(CancellationToken cancellationToken)
         {
             BoardAnalysis.PossibleMove? bestMove = null;
-            // Search deeper in minishogi games
+            // Search deeper in minigo games
             bestMove ??= await BoardAnalysis.EstimateBestPossibleMove(game, game.Board.GetLength(0) == 5 ? 4 : 3, cancellationToken);
             return bestMove.Value;
         }
@@ -571,15 +571,15 @@ namespace Shogi
         private System.Drawing.Point GetCoordFromCanvasPoint(Point position)
         {
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnSente && !goteIsComputer) || (senteIsComputer && !goteIsComputer));
-            // Canvas coordinates are relative to top-left, whereas shogi's are from bottom-left, so y is inverted
-            return new System.Drawing.Point((int)((boardFlipped ? shogiGameCanvas.ActualWidth - position.X : position.X) / tileWidth),
-                (int)((!boardFlipped ? shogiGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
+            // Canvas coordinates are relative to top-left, whereas go's are from bottom-left, so y is inverted
+            return new System.Drawing.Point((int)((boardFlipped ? goGameCanvas.ActualWidth - position.X : position.X) / tileWidth),
+                (int)((!boardFlipped ? goGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
         }
 
         private Pieces.Piece? GetPieceAtCanvasPoint(Point position)
         {
             if (position.X < 0 || position.Y < 0
-                || position.X > shogiGameCanvas.ActualWidth || position.Y > shogiGameCanvas.ActualHeight)
+                || position.X > goGameCanvas.ActualWidth || position.Y > goGameCanvas.ActualHeight)
             {
                 return null;
             }
@@ -589,11 +589,11 @@ namespace Shogi
                     : game.Board[coord.X, coord.Y];
         }
 
-        private async Task NewGame(bool minishogi)
+        private async Task NewGame(bool minigo)
         {
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
-            game = new ShogiGame(minishogi);
+            game = new GoGame(minigo);
             currentBestMove = null;
             manuallyEvaluating = false;
             grabbedPiece = null;
@@ -622,15 +622,15 @@ namespace Shogi
         {
             if (grabbedPiece is not null && !highlightGrabbedMoves)
             {
-                Canvas.SetBottom(pieceViews[grabbedPiece], shogiGameCanvas.ActualHeight - Mouse.GetPosition(shogiGameCanvas).Y - (tileHeight / 2));
-                Canvas.SetLeft(pieceViews[grabbedPiece], Mouse.GetPosition(shogiGameCanvas).X - (tileWidth / 2));
+                Canvas.SetBottom(pieceViews[grabbedPiece], goGameCanvas.ActualHeight - Mouse.GetPosition(goGameCanvas).Y - (tileHeight / 2));
+                Canvas.SetLeft(pieceViews[grabbedPiece], Mouse.GetPosition(goGameCanvas).X - (tileWidth / 2));
             }
             UpdateCursor();
         }
 
         private async void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Point mousePos = Mouse.GetPosition(shogiGameCanvas);
+            Point mousePos = Mouse.GetPosition(goGameCanvas);
             if (e.ChangedButton == MouseButton.Left)
             {
                 squareHighlights.Clear();
@@ -640,11 +640,11 @@ namespace Shogi
                     return;
                 }
 
-                if (selectedDropType is not null && mousePos.X >= 0 && mousePos.Y >= 0 && mousePos.X <= shogiGameCanvas.ActualWidth
-                    && mousePos.Y <= shogiGameCanvas.ActualHeight)
+                if (selectedDropType is not null && mousePos.X >= 0 && mousePos.Y >= 0 && mousePos.X <= goGameCanvas.ActualWidth
+                    && mousePos.Y <= goGameCanvas.ActualHeight)
                 {
                     System.Drawing.Point destination = GetCoordFromCanvasPoint(mousePos);
-                    bool success = game.MovePiece(ShogiGame.PieceDropSources[selectedDropType], destination, doPromotion: null);
+                    bool success = game.MovePiece(GoGame.PieceDropSources[selectedDropType], destination, doPromotion: null);
                     if (success)
                     {
                         highlightGrabbedMoves = false;
@@ -705,7 +705,7 @@ namespace Shogi
             else
             {
                 if (mousePos.X < 0 || mousePos.Y < 0
-                || mousePos.X > shogiGameCanvas.ActualWidth || mousePos.Y > shogiGameCanvas.ActualHeight)
+                || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
                 {
                     return;
                 }
@@ -725,7 +725,7 @@ namespace Shogi
                 }
                 if (grabbedPiece is not null)
                 {
-                    System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(shogiGameCanvas));
+                    System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
                     if (destination == grabbedPiece.Position)
                     {
                         highlightGrabbedMoves = true;
@@ -754,9 +754,9 @@ namespace Shogi
             }
             else
             {
-                Point mousePos = Mouse.GetPosition(shogiGameCanvas);
+                Point mousePos = Mouse.GetPosition(goGameCanvas);
                 if (mousePos.X < 0 || mousePos.Y < 0
-                || mousePos.X > shogiGameCanvas.ActualWidth || mousePos.Y > shogiGameCanvas.ActualHeight)
+                || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
                 {
                     return;
                 }
@@ -877,7 +877,7 @@ namespace Shogi
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             cancelMoveComputation.Cancel();
-            string jsonPath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "shogi-settings.json");
+            string jsonPath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "go-settings.json");
             File.WriteAllText(jsonPath, JsonConvert.SerializeObject(config));
         }
 
@@ -954,8 +954,8 @@ namespace Shogi
         private void CustomiseItem_Click(object sender, RoutedEventArgs e)
         {
             _ = new Customisation(config).ShowDialog();
-            shogiBoardBackground.Background = new SolidColorBrush(config.BoardColor);
-            miniShogiBoardBackground.Background = new SolidColorBrush(config.BoardColor);
+            goBoardBackground.Background = new SolidColorBrush(config.BoardColor);
+            miniGoBoardBackground.Background = new SolidColorBrush(config.BoardColor);
             UpdateGameDisplay();
         }
 

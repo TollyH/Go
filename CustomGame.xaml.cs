@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media;
 using System.Collections.Generic;
 
-namespace Shogi
+namespace Go
 {
     /// <summary>
     /// Interaction logic for CustomGame.xaml
@@ -15,7 +15,7 @@ namespace Shogi
     {
         public Pieces.Piece?[,] Board { get; private set; }
 
-        public ShogiGame? GeneratedGame { get; private set; }
+        public GoGame? GeneratedGame { get; private set; }
         public bool SenteIsComputer { get; private set; }
         public bool GoteIsComputer { get; private set; }
 
@@ -48,31 +48,31 @@ namespace Shogi
         private double tileWidth;
         private double tileHeight;
 
-        public CustomGame(Settings config, bool minishogi)
+        public CustomGame(Settings config, bool minigo)
         {
             GeneratedGame = null;
             this.config = config;
 
             InitializeComponent();
 
-            if (minishogi)
+            if (minigo)
             {
                 Board = new Pieces.Piece?[5, 5];
-                shogiBoardBackground.Visibility = Visibility.Collapsed;
+                goBoardBackground.Visibility = Visibility.Collapsed;
             }
             else
             {
                 Board = new Pieces.Piece?[9, 9];
-                miniShogiBoardBackground.Visibility = Visibility.Collapsed;
+                miniGoBoardBackground.Visibility = Visibility.Collapsed;
             }
         }
 
         public void UpdateBoard()
         {
-            tileWidth = shogiGameCanvas.ActualWidth / Board.GetLength(0);
-            tileHeight = shogiGameCanvas.ActualHeight / Board.GetLength(1);
+            tileWidth = goGameCanvas.ActualWidth / Board.GetLength(0);
+            tileHeight = goGameCanvas.ActualHeight / Board.GetLength(1);
 
-            shogiGameCanvas.Children.Clear();
+            goGameCanvas.Children.Clear();
 
             for (int x = 0; x < Board.GetLength(0); x++)
             {
@@ -89,7 +89,7 @@ namespace Shogi
                             Height = tileHeight
                         };
                         RenderOptions.SetBitmapScalingMode(newPiece, BitmapScalingMode.HighQuality);
-                        _ = shogiGameCanvas.Children.Add(newPiece);
+                        _ = goGameCanvas.Children.Add(newPiece);
                         Canvas.SetBottom(newPiece, y * tileHeight);
                         Canvas.SetLeft(newPiece, x * tileWidth);
                     }
@@ -123,8 +123,8 @@ namespace Shogi
             SenteIsComputer = computerSelectSente.IsChecked ?? false;
             GoteIsComputer = computerSelectGote.IsChecked ?? false;
             bool currentTurnSente = turnSelectSente.IsChecked ?? false;
-            GeneratedGame = new ShogiGame(Board, currentTurnSente,
-                ShogiGame.EndingStates.Contains(BoardAnalysis.DetermineGameState(Board, currentTurnSente)),
+            GeneratedGame = new GoGame(Board, currentTurnSente,
+                GoGame.EndingStates.Contains(BoardAnalysis.DetermineGameState(Board, currentTurnSente)),
                 new(), new(), new(), sentePieceDrops, gotePieceDrops, new(), null, null);
             Close();
         }
@@ -136,16 +136,16 @@ namespace Shogi
 
         private void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            Point mousePoint = Mouse.GetPosition(shogiGameCanvas);
+            Point mousePoint = Mouse.GetPosition(goGameCanvas);
             if (mousePoint.X < 0 || mousePoint.Y < 0
-                || mousePoint.X > shogiGameCanvas.ActualWidth || mousePoint.Y > shogiGameCanvas.ActualHeight)
+                || mousePoint.X > goGameCanvas.ActualWidth || mousePoint.Y > goGameCanvas.ActualHeight)
             {
                 return;
             }
 
-            // Canvas coordinates are relative to top-left, whereas shogi's are from bottom-left, so y is inverted
+            // Canvas coordinates are relative to top-left, whereas go's are from bottom-left, so y is inverted
             System.Drawing.Point coord = new((int)(mousePoint.X / tileWidth),
-                (int)((shogiGameCanvas.ActualHeight - mousePoint.Y) / tileHeight));
+                (int)((goGameCanvas.ActualHeight - mousePoint.Y) / tileHeight));
             if (coord.X < 0 || coord.Y < 0 || coord.X >= Board.GetLength(0) || coord.Y >= Board.GetLength(1))
             {
                 return;
@@ -251,12 +251,12 @@ namespace Shogi
             GoteIsComputer = computerSelectGote.IsChecked ?? false;
             try
             {
-                GeneratedGame = ShogiGame.FromShogiForsythEdwards(sfenInput.Text);
+                GeneratedGame = GoGame.FromGoForsythEdwards(sfenInput.Text);
                 Close();
             }
             catch (Exception ex)
             {
-                _ = MessageBox.Show(ex.Message, "Shogi Forsyth–Edwards Notation Error",
+                _ = MessageBox.Show(ex.Message, "Go Forsyth–Edwards Notation Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

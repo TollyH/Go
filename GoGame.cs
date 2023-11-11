@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 
-namespace Shogi
+namespace Go
 {
     /// <remarks>
     /// CheckSente and CheckMateSente mean that the check is against sente,
@@ -25,7 +25,7 @@ namespace Shogi
         CheckMateGote
     }
 
-    public class ShogiGame
+    public class GoGame
     {
         public static readonly ImmutableHashSet<GameState> EndingStates = new HashSet<GameState>()
         {
@@ -77,7 +77,7 @@ namespace Shogi
         public List<(string, Point, Point, bool, bool)> Moves { get; }
         public List<string> JapaneseMoveText { get; }
         public List<string> WesternMoveText { get; }
-        public ShogiGame? PreviousGameState { get; private set; }
+        public GoGame? PreviousGameState { get; private set; }
         public Dictionary<Type, int> SentePieceDrops { get; }
         public Dictionary<Type, int> GotePieceDrops { get; }
 
@@ -85,16 +85,16 @@ namespace Shogi
         public Dictionary<string, int> BoardCounts { get; }
 
         /// <summary>
-        /// Create a new standard shogi game with all values at their defaults
+        /// Create a new standard go game with all values at their defaults
         /// </summary>
-        public ShogiGame(bool minishogi)
+        public GoGame(bool minigo)
         {
             CurrentTurnSente = true;
             GameOver = false;
             AwaitingPromotionResponse = false;
 
-            SenteKing = new Pieces.King(new Point(minishogi ? 0 : 4, 0), true);
-            GoteKing = new Pieces.King(new Point(4, minishogi ? 4 : 8), false);
+            SenteKing = new Pieces.King(new Point(minigo ? 0 : 4, 0), true);
+            GoteKing = new Pieces.King(new Point(4, minigo ? 4 : 8), false);
 
             Moves = new List<(string, Point, Point, bool, bool)>();
             JapaneseMoveText = new List<string>();
@@ -122,7 +122,7 @@ namespace Shogi
 
             BoardCounts = new Dictionary<string, int>();
 
-            Board = minishogi
+            Board = minigo
             ? new Pieces.Piece?[5, 5]
                 {
                     { SenteKing, new Pieces.Pawn(new Point(0, 1), true), null, null, new Pieces.Rook(new Point(0, 4), false) },
@@ -143,31 +143,31 @@ namespace Shogi
                     { new Pieces.Knight(new Point(7, 0), true), new Pieces.Rook(new Point(7, 1), true), new Pieces.Pawn(new Point(7, 2), true), null, null, null, new Pieces.Pawn(new Point(7, 6), false), new Pieces.Bishop(new Point(7, 7), false), new Pieces.Knight(new Point(7, 8), false) },
                     { new Pieces.Lance(new Point(8, 0), true), null, new Pieces.Pawn(new Point(8, 2), true), null, null, null, new Pieces.Pawn(new Point(8, 6), false), null, new Pieces.Lance(new Point(8, 8), false) }
                 };
-            PromotionZoneSenteStart = minishogi ? 4 : 6;
-            PromotionZoneGoteStart = minishogi ? 0 : 2;
+            PromotionZoneSenteStart = minigo ? 4 : 6;
+            PromotionZoneGoteStart = minigo ? 0 : 2;
 
             InitialState = ToString();
         }
 
         /// <summary>
-        /// Create a new instance of a shogi game, setting each game parameter to a non-default value
+        /// Create a new instance of a go game, setting each game parameter to a non-default value
         /// </summary>
-        public ShogiGame(Pieces.Piece?[,] board, bool currentTurnSente, bool gameOver,
+        public GoGame(Pieces.Piece?[,] board, bool currentTurnSente, bool gameOver,
             List<(string, Point, Point, bool, bool)> moves, List<string> japaneseMoveText,
             List<string> westernMoveText, Dictionary<Type, int>? sentePieceDrops,
             Dictionary<Type, int>? gotePieceDrops, Dictionary<string, int> boardCounts,
-            string? initialState, ShogiGame? previousGameState)
+            string? initialState, GoGame? previousGameState)
         {
             if (board.GetLength(0) is not 9 and not 5 || board.GetLength(1) is not 9 and not 5)
             {
                 throw new ArgumentException("Boards must be 9x9 or 5x5 in size");
             }
 
-            bool minishogi = board.GetLength(0) == 5;
+            bool minigo = board.GetLength(0) == 5;
 
             Board = board;
-            PromotionZoneSenteStart = minishogi ? 4 : 6;
-            PromotionZoneGoteStart = minishogi ? 0 : 2;
+            PromotionZoneSenteStart = minigo ? 4 : 6;
+            PromotionZoneGoteStart = minigo ? 0 : 2;
             SenteKing = Board.OfType<Pieces.King>().Where(k => k.IsSente).First();
             GoteKing = Board.OfType<Pieces.King>().Where(k => !k.IsSente).First();
 
@@ -203,9 +203,9 @@ namespace Shogi
         }
 
         /// <summary>
-        /// Create a deep copy of all parameters to this shogi game
+        /// Create a deep copy of all parameters to this go game
         /// </summary>
-        public ShogiGame Clone()
+        public GoGame Clone()
         {
             Pieces.Piece?[,] boardClone = new Pieces.Piece?[Board.GetLength(0), Board.GetLength(1)];
             for (int x = 0; x < boardClone.GetLength(0); x++)
@@ -216,7 +216,7 @@ namespace Shogi
                 }
             }
 
-            return new ShogiGame(boardClone, CurrentTurnSente, GameOver, new(Moves), new(JapaneseMoveText),
+            return new GoGame(boardClone, CurrentTurnSente, GameOver, new(Moves), new(JapaneseMoveText),
                 new(WesternMoveText), new Dictionary<Type, int>(SentePieceDrops),
                 new Dictionary<Type, int>(GotePieceDrops), new(BoardCounts), InitialState, PreviousGameState?.Clone());
         }
@@ -308,7 +308,7 @@ namespace Shogi
                 return false;
             }
 
-            ShogiGame checkmateTest = Clone();
+            GoGame checkmateTest = Clone();
             _ = checkmateTest.MovePiece(new Point(-1, Array.IndexOf(DropTypeOrder, dropType)),
                 destination, forceMove: true, updateMoveText: false, determineGameState: false);
             GameState resultingGameState = BoardAnalysis.DetermineGameState(checkmateTest.Board, checkmateTest.CurrentTurnSente,
@@ -396,7 +396,7 @@ namespace Shogi
             }
 
             // Used for generating new move text and move undoing
-            ShogiGame? oldGame = null;
+            GoGame? oldGame = null;
             if (updateMoveText)
             {
                 oldGame = Clone();
@@ -486,7 +486,7 @@ namespace Shogi
                 if (updateMoveText)
                 {
                     string newJapaneseMove = (CurrentTurnSente ? "☖" : "☗")
-                        + (Moves.Count > 1 && destination == Moves[^2].Item3 ? "同　" : destination.ToShogiCoordinate(Board.GetLength(0) == 5))
+                        + (Moves.Count > 1 && destination == Moves[^2].Item3 ? "同　" : destination.ToGoCoordinate(Board.GetLength(0) == 5))
                         + beforePromotion.SymbolLetter;
                     string newWesternMove = beforePromotion.SFENLetter;
 
@@ -641,15 +641,15 @@ namespace Shogi
         }
 
         /// <summary>
-        /// Convert this game to a KIF file for use in other shogi programs
+        /// Convert this game to a KIF file for use in other go programs
         /// </summary>
         public string ToKIF(string? eventName, string? siteName, DateOnly? startDate, string senteName, string goteName,
             bool senteIsComputer, bool goteIsComputer)
         {
-            bool minishogi = Board.GetLength(0) == 5;
+            bool minigo = Board.GetLength(0) == 5;
 
             GameState state = DetermineGameState();
-            string kif = (minishogi ? "手合割：5五将棋\n" : "") +
+            string kif = (minigo ? "手合割：5五将棋\n" : "") +
                 $"先手：{senteName}\n" +
                 $"後手：{goteName}\n" +
                 (startDate is not null ? $"開始日時：{startDate.Value:yyyy'/'MM'/'dd}\n" : "") +
@@ -658,12 +658,12 @@ namespace Shogi
                 $"先手タイプ：{(senteIsComputer ? "プログラム" : "人間")}\n" +
                 $"後手タイプ：{(goteIsComputer ? "プログラム" : "人間")}\n";
 
-            // Include initial state if not a standard shogi game
-            if ((InitialState != "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -" && !minishogi)
-                || (InitialState != "rbsgk/4p/5/P4/KGSBR b -" && minishogi))
+            // Include initial state if not a standard go game
+            if ((InitialState != "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -" && !minigo)
+                || (InitialState != "rbsgk/4p/5/P4/KGSBR b -" && minigo))
             {
                 kif += "後手の持駒：";
-                ShogiGame initialGame = FromShogiForsythEdwards(InitialState);
+                GoGame initialGame = FromGoForsythEdwards(InitialState);
 
                 bool anyDrops = false;
                 foreach ((Type dropType, int count) in initialGame.GotePieceDrops)
@@ -679,7 +679,7 @@ namespace Shogi
                     kif += " なし";
                 }
 
-                kif += minishogi ? "\n５ ４ ３ ２ １\n+---------------+" : "\n９ ８ ７ ６ ５ ４ ３ ２ １\n+---------------------------+";
+                kif += minigo ? "\n５ ４ ３ ２ １\n+---------------+" : "\n９ ８ ７ ６ ５ ４ ３ ２ １\n+---------------------------+";
                 for (int y = initialGame.Board.GetLength(1) - 1; y >= 0; y--)
                 {
                     kif += "\n|";
@@ -696,7 +696,7 @@ namespace Shogi
                     kif += $"|{(Board.GetLength(1) - y).ToJapaneseKanji()}";
                 }
 
-                kif += minishogi ? "\n+---------------+\n先手の持駒：" : "\n+---------------------------+\n先手の持駒：";
+                kif += minigo ? "\n+---------------+\n先手の持駒：" : "\n+---------------------------+\n先手の持駒：";
                 anyDrops = false;
                 foreach ((Type dropType, int count) in initialGame.SentePieceDrops)
                 {
@@ -722,7 +722,7 @@ namespace Shogi
             for (int i = 0; i < Moves.Count; i += 1)
             {
                 (string pieceLetter, Point source, Point destination, bool promotion, bool drop) = Moves[i];
-                compiledMoveText += $"\n {i + 1}  {(destination == lastDest ? "同　" : destination.ToShogiCoordinate(minishogi))}{pieceLetter}";
+                compiledMoveText += $"\n {i + 1}  {(destination == lastDest ? "同　" : destination.ToGoCoordinate(minigo))}{pieceLetter}";
                 if (promotion)
                 {
                     compiledMoveText += '成';
@@ -751,14 +751,14 @@ namespace Shogi
         }
 
         /// <summary>
-        /// Convert Shogi Forsyth–Edwards Notation (SFEN) to a shogi game instance.
+        /// Convert Go Forsyth–Edwards Notation (SFEN) to a go game instance.
         /// </summary>
-        public static ShogiGame FromShogiForsythEdwards(string forsythEdwards)
+        public static GoGame FromGoForsythEdwards(string forsythEdwards)
         {
             string[] fields = forsythEdwards.Split(' ');
             if (fields.Length != 3)
             {
-                throw new FormatException("Shogi Forsyth–Edwards Notation requires 3 fields separated by spaces");
+                throw new FormatException("Go Forsyth–Edwards Notation requires 3 fields separated by spaces");
             }
 
             string[] ranks = fields[0].Split('/');
@@ -767,10 +767,10 @@ namespace Shogi
                 throw new FormatException("Board definitions must have 9 or 5 ranks separated by a forward slash");
             }
 
-            bool minishogi = ranks.Length == 5;
-            int maxIndex = minishogi ? 4 : 8;
+            bool minigo = ranks.Length == 5;
+            int maxIndex = minigo ? 4 : 8;
 
-            Pieces.Piece?[,] board = minishogi ? new Pieces.Piece?[5, 5] : new Pieces.Piece?[9, 9];
+            Pieces.Piece?[,] board = minigo ? new Pieces.Piece?[5, 5] : new Pieces.Piece?[9, 9];
             for (int r = 0; r < ranks.Length; r++)
             {
                 int fileIndex = 0;
@@ -871,7 +871,7 @@ namespace Shogi
                     fileIndex++;
                     promoteNextPiece = false;
                 }
-                if ((fileIndex != 9 && !minishogi) || (fileIndex != 5 && minishogi))
+                if ((fileIndex != 9 && !minigo) || (fileIndex != 5 && minigo))
                 {
                     throw new FormatException("Each rank in a board definition must contain definitions for 9 or 5 files");
                 }
@@ -977,8 +977,8 @@ namespace Shogi
                 numberChanged = false;
             }
 
-            // Shogi Forsyth–Edwards doesn't define what the previous moves were, so they moves list starts empty
-            return new ShogiGame(board, currentTurnSente, EndingStates.Contains(BoardAnalysis.DetermineGameState(board, currentTurnSente)),
+            // Go Forsyth–Edwards doesn't define what the previous moves were, so they moves list starts empty
+            return new GoGame(board, currentTurnSente, EndingStates.Contains(BoardAnalysis.DetermineGameState(board, currentTurnSente)),
                 new(), new(), new(), sentePieceDrops, gotePieceDrops, new(), null, null);
         }
     }

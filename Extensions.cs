@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 
-namespace Shogi
+namespace Go
 {
     public static class Extensions
     {
@@ -18,16 +18,16 @@ namespace Shogi
 
         private const string files = "９８７６５４３２１";
         private const string ranks = "九八七六五四三二一";
-        public static string ToShogiCoordinate(this Point point, bool minishogi)
+        public static string ToGoCoordinate(this Point point, bool minigo)
         {
-            if (minishogi)
+            if (minigo)
             {
                 point = new Point(point.X + 4, point.Y + 4);
             }
             return $"{files[point.X]}{ranks[point.Y]}";
         }
 
-        public static Point FromShogiCoordinate(this string coordinate)
+        public static Point FromGoCoordinate(this string coordinate)
         {
             return new Point(files.IndexOf(coordinate[0]), ranks.IndexOf(coordinate[1]));
         }

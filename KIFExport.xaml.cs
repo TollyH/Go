@@ -3,18 +3,18 @@ using System;
 using System.IO;
 using System.Windows;
 
-namespace Shogi
+namespace Go
 {
     /// <summary>
     /// Interaction logic for KIFExport.xaml
     /// </summary>
     public partial class KIFExport : Window
     {
-        private readonly ShogiGame game;
+        private readonly GoGame game;
         private readonly bool senteIsComputer;
         private readonly bool goteIsComputer;
 
-        public KIFExport(ShogiGame game, bool senteIsComputer, bool goteIsComputer)
+        public KIFExport(GoGame game, bool senteIsComputer, bool goteIsComputer)
         {
             this.game = game;
             this.senteIsComputer = senteIsComputer;
