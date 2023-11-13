@@ -51,7 +51,7 @@ namespace Go.Pieces
         public abstract char SingleLetter { get; }
         public abstract string SFENLetter { get; }
         public abstract double Value { get; }
-        public abstract bool IsSente { get; }
+        public abstract bool IsBlack { get; }
         public abstract Point Position { get; protected set; }
 
         /// <summary>
@@ -89,13 +89,13 @@ namespace Go.Pieces
         public override string SFENLetter => "K";
         // King should not contribute to overall board value, as it always present
         public override double Value => 0;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public King(Point position, bool isSente)
+        public King(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
@@ -109,7 +109,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -118,14 +118,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente, m));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack, m));
             }
             return moves;
         }
 
         public override King Clone()
         {
-            return new King(Position, IsSente);
+            return new King(Position, IsBlack);
         }
     }
 
@@ -136,18 +136,18 @@ namespace Go.Pieces
         public override char SingleLetter => '金';
         public override string SFENLetter => "G";
         public override double Value => 11;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public GoldGeneral(Point position, bool isSente)
+        public GoldGeneral(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int backwardsY = IsSente ? -1 : 1;
+            int backwardsY = IsBlack ? -1 : 1;
             HashSet<Point> moves = new();
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -157,7 +157,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -166,14 +166,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override GoldGeneral Clone()
         {
-            return new GoldGeneral(Position, IsSente);
+            return new GoldGeneral(Position, IsBlack);
         }
     }
 
@@ -184,18 +184,18 @@ namespace Go.Pieces
         public override char SingleLetter => '銀';
         public override string SFENLetter => "S";
         public override double Value => 10;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public SilverGeneral(Point position, bool isSente)
+        public SilverGeneral(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int backwardsY = IsSente ? -1 : 1;
+            int backwardsY = IsBlack ? -1 : 1;
             HashSet<Point> moves = new();
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -205,7 +205,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -214,14 +214,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override SilverGeneral Clone()
         {
-            return new SilverGeneral(Position, IsSente);
+            return new SilverGeneral(Position, IsBlack);
         }
     }
 
@@ -232,18 +232,18 @@ namespace Go.Pieces
         public override char SingleLetter => '全';
         public override string SFENLetter => "+S";
         public override double Value => 11;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public PromotedSilverGeneral(Point position, bool isSente)
+        public PromotedSilverGeneral(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int backwardsY = IsSente ? -1 : 1;
+            int backwardsY = IsBlack ? -1 : 1;
             HashSet<Point> moves = new();
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -253,7 +253,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -262,14 +262,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override PromotedSilverGeneral Clone()
         {
-            return new PromotedSilverGeneral(Position, IsSente);
+            return new PromotedSilverGeneral(Position, IsBlack);
         }
     }
 
@@ -280,13 +280,13 @@ namespace Go.Pieces
         public override char SingleLetter => '飛';
         public override string SFENLetter => "R";
         public override double Value => 19;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public Rook(Point position, bool isSente)
+        public Rook(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
@@ -302,7 +302,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -319,7 +319,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -336,7 +336,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -353,7 +353,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -362,14 +362,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override Rook Clone()
         {
-            return new Rook(Position, IsSente);
+            return new Rook(Position, IsBlack);
         }
     }
 
@@ -380,13 +380,13 @@ namespace Go.Pieces
         public override char SingleLetter => '龍';
         public override string SFENLetter => "+R";
         public override double Value => 22;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public PromotedRook(Point position, bool isSente)
+        public PromotedRook(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
@@ -400,7 +400,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -417,7 +417,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -434,7 +434,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -451,7 +451,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -468,7 +468,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -477,14 +477,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override PromotedRook Clone()
         {
-            return new PromotedRook(Position, IsSente);
+            return new PromotedRook(Position, IsBlack);
         }
     }
 
@@ -495,13 +495,13 @@ namespace Go.Pieces
         public override char SingleLetter => '角';
         public override string SFENLetter => "B";
         public override double Value => 17;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public Bishop(Point position, bool isSente)
+        public Bishop(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
@@ -517,7 +517,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -534,7 +534,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -551,7 +551,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -568,7 +568,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -577,14 +577,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override Bishop Clone()
         {
-            return new Bishop(Position, IsSente);
+            return new Bishop(Position, IsBlack);
         }
     }
 
@@ -595,13 +595,13 @@ namespace Go.Pieces
         public override char SingleLetter => '馬';
         public override string SFENLetter => "+B";
         public override double Value => 20;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public PromotedBishop(Point position, bool isSente)
+        public PromotedBishop(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
@@ -615,7 +615,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -632,7 +632,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -649,7 +649,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -666,7 +666,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -683,7 +683,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -692,14 +692,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override PromotedBishop Clone()
         {
-            return new PromotedBishop(Position, IsSente);
+            return new PromotedBishop(Position, IsBlack);
         }
     }
 
@@ -710,44 +710,44 @@ namespace Go.Pieces
         public override char SingleLetter => '桂';
         public override string SFENLetter => "N";
         public override double Value => 6;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public Knight(Point position, bool isSente)
+        public Knight(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int dy = IsSente ? 2 : -2;
+            int dy = IsBlack ? 2 : -2;
             HashSet<Point> moves = new();
 
             Point newPos = new(Position.X + 1, Position.Y + dy);
             if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
             {
                 _ = moves.Add(newPos);
             }
 
             newPos = new(Position.X - 1, Position.Y + dy);
             if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
             {
                 _ = moves.Add(newPos);
             }
 
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override Knight Clone()
         {
-            return new Knight(Position, IsSente);
+            return new Knight(Position, IsBlack);
         }
     }
 
@@ -758,18 +758,18 @@ namespace Go.Pieces
         public override char SingleLetter => '圭';
         public override string SFENLetter => "+N";
         public override double Value => 11;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public PromotedKnight(Point position, bool isSente)
+        public PromotedKnight(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int backwardsY = IsSente ? -1 : 1;
+            int backwardsY = IsBlack ? -1 : 1;
             HashSet<Point> moves = new();
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -779,7 +779,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -788,14 +788,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override PromotedKnight Clone()
         {
-            return new PromotedKnight(Position, IsSente);
+            return new PromotedKnight(Position, IsBlack);
         }
     }
 
@@ -806,18 +806,18 @@ namespace Go.Pieces
         public override char SingleLetter => '香';
         public override string SFENLetter => "L";
         public override double Value => 6;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public Lance(Point position, bool isSente)
+        public Lance(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int yChange = IsSente ? 1 : -1;
+            int yChange = IsBlack ? 1 : -1;
             HashSet<Point> moves = new();
             for (int dy = Position.Y + yChange; dy < board.GetLength(1) && dy >= 0; dy += yChange)
             {
@@ -828,7 +828,7 @@ namespace Go.Pieces
                 }
                 else
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != IsSente)
+                    if (board[newPos.X, newPos.Y]!.IsBlack != IsBlack)
                     {
                         _ = moves.Add(newPos);
                     }
@@ -837,14 +837,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override Lance Clone()
         {
-            return new Lance(Position, IsSente);
+            return new Lance(Position, IsBlack);
         }
     }
 
@@ -855,18 +855,18 @@ namespace Go.Pieces
         public override char SingleLetter => '杏';
         public override string SFENLetter => "+L";
         public override double Value => 11;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public PromotedLance(Point position, bool isSente)
+        public PromotedLance(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int backwardsY = IsSente ? -1 : 1;
+            int backwardsY = IsBlack ? -1 : 1;
             HashSet<Point> moves = new();
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -876,7 +876,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -885,14 +885,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override PromotedLance Clone()
         {
-            return new PromotedLance(Position, IsSente);
+            return new PromotedLance(Position, IsBlack);
         }
     }
 
@@ -903,33 +903,33 @@ namespace Go.Pieces
         public override char SingleLetter => '歩';
         public override string SFENLetter => "P";
         public override double Value => 1;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public Pawn(Point position, bool isSente)
+        public Pawn(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
             HashSet<Point> moves = new();
-            int checkY = Position.Y + (IsSente ? 1 : -1);
-            if (board[Position.X, checkY] is null || board[Position.X, checkY]!.IsSente != IsSente)
+            int checkY = Position.Y + (IsBlack ? 1 : -1);
+            if (board[Position.X, checkY] is null || board[Position.X, checkY]!.IsBlack != IsBlack)
             {
                 _ = moves.Add(new Point(Position.X, checkY));
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override Pawn Clone()
         {
-            return new Pawn(Position, IsSente);
+            return new Pawn(Position, IsBlack);
         }
     }
 
@@ -940,18 +940,18 @@ namespace Go.Pieces
         public override char SingleLetter => 'と';
         public override string SFENLetter => "+P";
         public override double Value => 11;
-        public override bool IsSente { get; }
+        public override bool IsBlack { get; }
         public override Point Position { get; protected set; }
 
-        public PromotedPawn(Point position, bool isSente)
+        public PromotedPawn(Point position, bool isBlack)
         {
             Position = position;
-            IsSente = isSente;
+            IsBlack = isBlack;
         }
 
         public override HashSet<Point> GetValidMoves(Piece?[,] board, bool enforceCheckLegality)
         {
-            int backwardsY = IsSente ? -1 : 1;
+            int backwardsY = IsBlack ? -1 : 1;
             HashSet<Point> moves = new();
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -961,7 +961,7 @@ namespace Go.Pieces
                     {
                         Point newPos = new(Position.X + dx, Position.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsSente != IsSente))
+                            && (board[newPos.X, newPos.Y] is null || board[newPos.X, newPos.Y]!.IsBlack != IsBlack))
                         {
                             _ = moves.Add(newPos);
                         }
@@ -970,14 +970,14 @@ namespace Go.Pieces
             }
             if (enforceCheckLegality)
             {
-                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsSente));
+                _ = moves.RemoveWhere(m => BoardAnalysis.IsKingReachable(board.AfterMove(Position, m), IsBlack));
             }
             return moves;
         }
 
         public override PromotedPawn Clone()
         {
-            return new PromotedPawn(Position, IsSente);
+            return new PromotedPawn(Position, IsBlack);
         }
     }
 }

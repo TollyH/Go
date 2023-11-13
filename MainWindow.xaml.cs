@@ -33,8 +33,8 @@ namespace Go
         private HashSet<(System.Drawing.Point, System.Drawing.Point)> lineHighlights = new();
         private System.Drawing.Point? mouseDownStartPoint = null;
 
-        private bool senteIsComputer = false;
-        private bool goteIsComputer = false;
+        private bool blackIsComputer = false;
+        private bool whiteIsComputer = false;
 
         private BoardAnalysis.PossibleMove? currentBestMove = null;
         private bool manuallyEvaluating = false;
@@ -80,20 +80,20 @@ namespace Go
             goBoardBackground.Children.Remove(sizeReference);
             miniGoBoardBackground.Children.Remove(sizeReference);
 
-            bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnSente && !goteIsComputer) || (senteIsComputer && !goteIsComputer));
+            bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
             bool minigo = game.Board.GetLength(0) == 5;
 
             tileWidth = goGameCanvas.ActualWidth / game.Board.GetLength(0);
             tileHeight = goGameCanvas.ActualHeight / game.Board.GetLength(1);
 
-            foreach (Grid dropItem in senteDropsPanel.Children)
+            foreach (Grid dropItem in blackDropsPanel.Children)
             {
                 Type pieceType = (Type)dropItem.Tag;
-                int heldCount = game.SentePieceDrops[pieceType];
+                int heldCount = game.BlackPieceDrops[pieceType];
                 dropItem.Opacity = heldCount == 0 ? 0.55 : 1;
 
                 SolidColorBrush dropBackground;
-                if (game.CurrentTurnSente)
+                if (game.CurrentTurnBlack)
                 {
                     if (currentBestMove is not null && currentBestMove.Value.Source.X == -1
                         && GoGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
@@ -118,16 +118,16 @@ namespace Go
                 ((Label)dropItem.Children[1]).Content = heldCount;
                 ((Label)dropItem.Children[1]).VerticalAlignment = boardFlipped ? VerticalAlignment.Bottom : VerticalAlignment.Top;
                 ((Image)dropItem.Children[0]).Source = new BitmapImage(new Uri(
-                    $"pack://application:,,,/Pieces/{config.PieceSet}/{(boardFlipped ? "Gote" : "Sente")}/{((Image)dropItem.Children[0]).Tag}.png"));
+                    $"pack://application:,,,/Pieces/{config.PieceSet}/{(boardFlipped ? "White" : "Black")}/{((Image)dropItem.Children[0]).Tag}.png"));
             }
-            foreach (Grid dropItem in goteDropsPanel.Children)
+            foreach (Grid dropItem in whiteDropsPanel.Children)
             {
                 Type pieceType = (Type)dropItem.Tag;
-                int heldCount = game.GotePieceDrops[pieceType];
+                int heldCount = game.WhitePieceDrops[pieceType];
                 dropItem.Opacity = heldCount == 0 ? 0.55 : 1;
 
                 SolidColorBrush dropBackground;
-                if (!game.CurrentTurnSente)
+                if (!game.CurrentTurnBlack)
                 {
                     if (currentBestMove is not null && currentBestMove.Value.Source.X == -1
                         && GoGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
@@ -152,30 +152,30 @@ namespace Go
                 ((Label)dropItem.Children[1]).Content = heldCount;
                 ((Label)dropItem.Children[1]).VerticalAlignment = boardFlipped ? VerticalAlignment.Top : VerticalAlignment.Bottom;
                 ((Image)dropItem.Children[0]).Source = new BitmapImage(new Uri(
-                    $"pack://application:,,,/Pieces/{config.PieceSet}/{(boardFlipped ? "Sente" : "Gote")}/{((Image)dropItem.Children[0]).Tag}.png"));
+                    $"pack://application:,,,/Pieces/{config.PieceSet}/{(boardFlipped ? "Black" : "White")}/{((Image)dropItem.Children[0]).Tag}.png"));
             }
 
             if (currentBestMove is null && !manuallyEvaluating)
             {
-                if (game.CurrentTurnSente && !senteIsComputer)
+                if (game.CurrentTurnBlack && !blackIsComputer)
                 {
-                    senteEvaluation.Content = "?";
+                    blackEvaluation.Content = "?";
                 }
-                else if (!goteIsComputer)
+                else if (!whiteIsComputer)
                 {
-                    goteEvaluation.Content = "?";
+                    whiteEvaluation.Content = "?";
                 }
             }
 
             if (boardFlipped)
             {
-                Grid.SetColumn(senteEvaluationView, 2);
-                Grid.SetRow(senteEvaluationView, 0);
-                Grid.SetColumn(goteEvaluationView, 0);
-                Grid.SetRow(goteEvaluationView, 2);
+                Grid.SetColumn(blackEvaluationView, 2);
+                Grid.SetRow(blackEvaluationView, 0);
+                Grid.SetColumn(whiteEvaluationView, 0);
+                Grid.SetRow(whiteEvaluationView, 2);
 
-                Grid.SetRow(senteDropsContainer, 1);
-                Grid.SetRow(goteDropsContainer, 3);
+                Grid.SetRow(blackDropsContainer, 1);
+                Grid.SetRow(whiteDropsContainer, 3);
 
                 foreach (UIElement child in ranksLeft.Children)
                 {
@@ -196,13 +196,13 @@ namespace Go
             }
             else
             {
-                Grid.SetColumn(senteEvaluationView, 0);
-                Grid.SetRow(senteEvaluationView, 2);
-                Grid.SetColumn(goteEvaluationView, 2);
-                Grid.SetRow(goteEvaluationView, 0);
+                Grid.SetColumn(blackEvaluationView, 0);
+                Grid.SetRow(blackEvaluationView, 2);
+                Grid.SetColumn(whiteEvaluationView, 2);
+                Grid.SetRow(whiteEvaluationView, 0);
 
-                Grid.SetRow(senteDropsContainer, 3);
-                Grid.SetRow(goteDropsContainer, 1);
+                Grid.SetRow(blackDropsContainer, 3);
+                Grid.SetRow(whiteDropsContainer, 1);
 
                 foreach (UIElement child in ranksLeft.Children)
                 {
@@ -254,9 +254,9 @@ namespace Go
             int boardMaxY = game.Board.GetLength(1) - 1;
             int boardMaxX = game.Board.GetLength(0) - 1;
 
-            if (state is GameState.CheckMateSente or GameState.CheckMateGote)
+            if (state is GameState.CheckMateBlack or GameState.CheckMateWhite)
             {
-                System.Drawing.Point kingPosition = state == GameState.CheckMateSente ? game.SenteKing.Position : game.GoteKing.Position;
+                System.Drawing.Point kingPosition = state == GameState.CheckMateBlack ? game.BlackKing.Position : game.WhiteKing.Position;
                 Rectangle mateHighlight = new()
                 {
                     Width = tileWidth,
@@ -385,7 +385,7 @@ namespace Go
                     if (piece is not null)
                     {
                         Brush? backgroundBrush = null;
-                        if (piece is Pieces.King && ((piece.IsSente && state == GameState.CheckSente) || (!piece.IsSente && state == GameState.CheckGote)))
+                        if (piece is Pieces.King && ((piece.IsBlack && state == GameState.CheckBlack) || (!piece.IsBlack && state == GameState.CheckWhite)))
                         {
                             backgroundBrush = new SolidColorBrush(config.CheckedKingColor);
                         }
@@ -399,7 +399,7 @@ namespace Go
                             Child = new Image()
                             {
                                 Source = new BitmapImage(
-                                new Uri($"pack://application:,,,/Pieces/{config.PieceSet}/{(piece.IsSente ^ boardFlipped ? "Sente" : "Gote")}/{piece.Name}.png"))
+                                new Uri($"pack://application:,,,/Pieces/{config.PieceSet}/{(piece.IsBlack ^ boardFlipped ? "Black" : "White")}/{piece.Name}.png"))
                             },
                             Width = tileWidth,
                             Height = tileHeight,
@@ -462,8 +462,8 @@ namespace Go
                 return;
             }
             Pieces.Piece? checkPiece = GetPieceAtCanvasPoint(Mouse.GetPosition(goGameCanvas));
-            if (checkPiece is not null && ((checkPiece.IsSente && game.CurrentTurnSente && !senteIsComputer)
-                || (!checkPiece.IsSente && !game.CurrentTurnSente && !goteIsComputer)))
+            if (checkPiece is not null && ((checkPiece.IsBlack && game.CurrentTurnBlack && !blackIsComputer)
+                || (!checkPiece.IsBlack && !game.CurrentTurnBlack && !whiteIsComputer)))
             {
                 Mouse.OverrideCursor = Cursors.Hand;
                 return;
@@ -480,21 +480,21 @@ namespace Go
             {
                 _ = MessageBox.Show(game.DetermineGameState() switch
                 {
-                    GameState.CheckMateSente => "Gote wins by checkmate!",
-                    GameState.CheckMateGote => "Sente wins by checkmate!",
-                    GameState.StalemateSente => "Gote wins by stalemate!",
-                    GameState.StalemateGote => "Sente wins by stalemate!",
-                    GameState.PerpetualCheckSente => "Sente wins as gote attempted to draw through perpetual check",
-                    GameState.PerpetualCheckGote => "Gote wins as sente attempted to draw through perpetual check",
+                    GameState.CheckMateBlack => "White wins by checkmate!",
+                    GameState.CheckMateWhite => "Black wins by checkmate!",
+                    GameState.StalemateBlack => "White wins by stalemate!",
+                    GameState.StalemateWhite => "Black wins by stalemate!",
+                    GameState.PerpetualCheckBlack => "Black wins as white attempted to draw through perpetual check",
+                    GameState.PerpetualCheckWhite => "White wins as black attempted to draw through perpetual check",
                     GameState.DrawRepetition => "Game drawn as the same position has occured four times",
                     _ => "Game over"
                 }, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
-        private void UpdateEvaluationMeter(BoardAnalysis.PossibleMove? bestMove, bool sente)
+        private void UpdateEvaluationMeter(BoardAnalysis.PossibleMove? bestMove, bool black)
         {
-            Label toUpdate = sente ? senteEvaluation : goteEvaluation;
+            Label toUpdate = black ? blackEvaluation : whiteEvaluation;
             if (bestMove is null)
             {
                 toUpdate.Content = "...";
@@ -502,15 +502,15 @@ namespace Go
                 return;
             }
 
-            if ((bestMove.Value.SenteMateLocated && !bestMove.Value.GoteMateLocated)
+            if ((bestMove.Value.BlackMateLocated && !bestMove.Value.WhiteMateLocated)
                 || bestMove.Value.EvaluatedFutureValue == double.NegativeInfinity)
             {
-                toUpdate.Content = $"-M{bestMove.Value.DepthToSenteMate}";
+                toUpdate.Content = $"-M{bestMove.Value.DepthToBlackMate}";
             }
-            else if ((bestMove.Value.GoteMateLocated && !bestMove.Value.SenteMateLocated)
+            else if ((bestMove.Value.WhiteMateLocated && !bestMove.Value.BlackMateLocated)
                 || bestMove.Value.EvaluatedFutureValue == double.PositiveInfinity)
             {
-                toUpdate.Content = $"+M{bestMove.Value.DepthToGoteMate}";
+                toUpdate.Content = $"+M{bestMove.Value.DepthToWhiteMate}";
             }
             else
             {
@@ -543,12 +543,12 @@ namespace Go
         /// </summary>
         private async Task CheckComputerMove()
         {
-            while (!game.GameOver && ((game.CurrentTurnSente && senteIsComputer) || (!game.CurrentTurnSente && goteIsComputer)))
+            while (!game.GameOver && ((game.CurrentTurnBlack && blackIsComputer) || (!game.CurrentTurnBlack && whiteIsComputer)))
             {
                 CancellationToken cancellationToken = cancelMoveComputation.Token;
                 if (config.UpdateEvalAfterBot)
                 {
-                    UpdateEvaluationMeter(null, game.CurrentTurnSente);
+                    UpdateEvaluationMeter(null, game.CurrentTurnBlack);
                 }
                 BoardAnalysis.PossibleMove bestMove = await GetEngineMove(cancellationToken);
                 if (cancellationToken.IsCancellationRequested)
@@ -562,7 +562,7 @@ namespace Go
                 if (config.UpdateEvalAfterBot)
                 {
                     // Turn has been inverted already but we have value for the now old turn
-                    UpdateEvaluationMeter(bestMove, !game.CurrentTurnSente);
+                    UpdateEvaluationMeter(bestMove, !game.CurrentTurnBlack);
                 }
                 PushEndgameMessage();
             }
@@ -570,7 +570,7 @@ namespace Go
 
         private System.Drawing.Point GetCoordFromCanvasPoint(Point position)
         {
-            bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnSente && !goteIsComputer) || (senteIsComputer && !goteIsComputer));
+            bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
             // Canvas coordinates are relative to top-left, whereas go's are from bottom-left, so y is inverted
             return new System.Drawing.Point((int)((boardFlipped ? goGameCanvas.ActualWidth - position.X : position.X) / tileWidth),
                 (int)((!boardFlipped ? goGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
@@ -599,8 +599,8 @@ namespace Go
             grabbedPiece = null;
             highlightGrabbedMoves = false;
             selectedDropType = null;
-            senteEvaluation.Content = "?";
-            goteEvaluation.Content = "?";
+            blackEvaluation.Content = "?";
+            whiteEvaluation.Content = "?";
             UpdateGameDisplay();
             UpdateCursor();
             await CheckComputerMove();
@@ -684,8 +684,8 @@ namespace Go
                 Pieces.Piece? toCheck = GetPieceAtCanvasPoint(mousePos);
                 if (toCheck is not null)
                 {
-                    if ((toCheck.IsSente && game.CurrentTurnSente && !senteIsComputer)
-                        || (!toCheck.IsSente && !game.CurrentTurnSente && !goteIsComputer))
+                    if ((toCheck.IsBlack && game.CurrentTurnBlack && !blackIsComputer)
+                        || (!toCheck.IsBlack && !game.CurrentTurnBlack && !whiteIsComputer))
                     {
                         grabbedPiece = toCheck;
                         manuallyEvaluating = false;
@@ -791,8 +791,8 @@ namespace Go
 
         private async void evaluation_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (currentBestMove is not null || (game.CurrentTurnSente && senteIsComputer)
-                || (!game.CurrentTurnSente && goteIsComputer))
+            if (currentBestMove is not null || (game.CurrentTurnBlack && blackIsComputer)
+                || (!game.CurrentTurnBlack && whiteIsComputer))
             {
                 return;
             }
@@ -800,7 +800,7 @@ namespace Go
             grabbedPiece = null;
             highlightGrabbedMoves = false;
             selectedDropType = null;
-            UpdateEvaluationMeter(null, game.CurrentTurnSente);
+            UpdateEvaluationMeter(null, game.CurrentTurnBlack);
             UpdateGameDisplay();
             UpdateCursor();
 
@@ -812,7 +812,7 @@ namespace Go
                 return;
             }
 
-            UpdateEvaluationMeter(bestMove, game.CurrentTurnSente);
+            UpdateEvaluationMeter(bestMove, game.CurrentTurnBlack);
             currentBestMove = bestMove;
             UpdateGameDisplay();
             manuallyEvaluating = false;
@@ -820,57 +820,57 @@ namespace Go
 
         private async void NewGame_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = false;
-            goteIsComputer = false;
+            blackIsComputer = false;
+            whiteIsComputer = false;
             await NewGame(false);
         }
 
-        private async void NewGameCpuSente_Click(object sender, RoutedEventArgs e)
+        private async void NewGameCpuBlack_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = false;
-            goteIsComputer = true;
+            blackIsComputer = false;
+            whiteIsComputer = true;
             await NewGame(false);
         }
 
-        private async void NewGameCpuGote_Click(object sender, RoutedEventArgs e)
+        private async void NewGameCpuWhite_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = true;
-            goteIsComputer = false;
+            blackIsComputer = true;
+            whiteIsComputer = false;
             await NewGame(false);
         }
 
         private async void NewGameCpuOnly_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = true;
-            goteIsComputer = true;
+            blackIsComputer = true;
+            whiteIsComputer = true;
             await NewGame(false);
         }
 
         private async void NewMiniGame_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = false;
-            goteIsComputer = false;
+            blackIsComputer = false;
+            whiteIsComputer = false;
             await NewGame(true);
         }
 
-        private async void NewMiniGameCpuSente_Click(object sender, RoutedEventArgs e)
+        private async void NewMiniGameCpuBlack_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = false;
-            goteIsComputer = true;
+            blackIsComputer = false;
+            whiteIsComputer = true;
             await NewGame(true);
         }
 
-        private async void NewMiniGameCpuGote_Click(object sender, RoutedEventArgs e)
+        private async void NewMiniGameCpuWhite_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = true;
-            goteIsComputer = false;
+            blackIsComputer = true;
+            whiteIsComputer = false;
             await NewGame(true);
         }
 
         private async void NewMiniGameCpuOnly_Click(object sender, RoutedEventArgs e)
         {
-            senteIsComputer = true;
-            goteIsComputer = true;
+            blackIsComputer = true;
+            whiteIsComputer = true;
             await NewGame(true);
         }
 
@@ -886,7 +886,7 @@ namespace Go
             manuallyEvaluating = false;
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
-            _ = new KIFExport(game, senteIsComputer, goteIsComputer).ShowDialog();
+            _ = new KIFExport(game, blackIsComputer, whiteIsComputer).ShowDialog();
             await CheckComputerMove();
         }
 
@@ -900,14 +900,14 @@ namespace Go
             if (customDialog.GeneratedGame is not null)
             {
                 game = customDialog.GeneratedGame;
-                senteIsComputer = customDialog.SenteIsComputer;
-                goteIsComputer = customDialog.GoteIsComputer;
+                blackIsComputer = customDialog.BlackIsComputer;
+                whiteIsComputer = customDialog.WhiteIsComputer;
                 grabbedPiece = null;
                 highlightGrabbedMoves = false;
                 selectedDropType = null;
                 currentBestMove = null;
-                senteEvaluation.Content = "?";
-                goteEvaluation.Content = "?";
+                blackEvaluation.Content = "?";
+                whiteEvaluation.Content = "?";
                 UpdateGameDisplay();
                 PushEndgameMessage();
             }
@@ -924,14 +924,14 @@ namespace Go
             if (customDialog.GeneratedGame is not null)
             {
                 game = customDialog.GeneratedGame;
-                senteIsComputer = customDialog.SenteIsComputer;
-                goteIsComputer = customDialog.GoteIsComputer;
+                blackIsComputer = customDialog.BlackIsComputer;
+                whiteIsComputer = customDialog.WhiteIsComputer;
                 grabbedPiece = null;
                 highlightGrabbedMoves = false;
                 selectedDropType = null;
                 currentBestMove = null;
-                senteEvaluation.Content = "?";
-                goteEvaluation.Content = "?";
+                blackEvaluation.Content = "?";
+                whiteEvaluation.Content = "?";
                 UpdateGameDisplay();
                 PushEndgameMessage();
             }
@@ -984,10 +984,10 @@ namespace Go
         private async void UndoMove_Click(object sender, RoutedEventArgs e)
         {
             if (game.PreviousGameState is not null
-                && ((game.CurrentTurnSente && !senteIsComputer) || (!game.CurrentTurnSente && !goteIsComputer)))
+                && ((game.CurrentTurnBlack && !blackIsComputer) || (!game.CurrentTurnBlack && !whiteIsComputer)))
             {
                 game = game.PreviousGameState;
-                if (senteIsComputer || goteIsComputer)
+                if (blackIsComputer || whiteIsComputer)
                 {
                     // Reverse two moves if the opponent is computer controlled
                     game = game.PreviousGameState!;
@@ -997,12 +997,12 @@ namespace Go
             }
         }
 
-        private void GoteDrop_MouseUp(object sender, MouseButtonEventArgs e)
+        private void WhiteDrop_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left && !game.GameOver)
             {
                 Type clickedType = (Type)((Grid)sender).Tag;
-                if (game.CurrentTurnSente || goteIsComputer || game.GotePieceDrops[clickedType] == 0)
+                if (game.CurrentTurnBlack || whiteIsComputer || game.WhitePieceDrops[clickedType] == 0)
                 {
                     return;
                 }
@@ -1012,12 +1012,12 @@ namespace Go
             }
         }
 
-        private void SenteDrop_MouseUp(object sender, MouseButtonEventArgs e)
+        private void BlackDrop_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left && !game.GameOver)
             {
                 Type clickedType = (Type)((Grid)sender).Tag;
-                if (!game.CurrentTurnSente || senteIsComputer || game.SentePieceDrops[clickedType] == 0)
+                if (!game.CurrentTurnBlack || blackIsComputer || game.BlackPieceDrops[clickedType] == 0)
                 {
                     return;
                 }

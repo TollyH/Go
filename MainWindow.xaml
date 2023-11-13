@@ -21,13 +21,13 @@
         <Menu Grid.ColumnSpan="2">
             <MenuItem Header="_Game" Margin="2">
                 <MenuItem Header="_New Game (2 Players)" Click="NewGame_Click"/>
-                <MenuItem Header="New Game (1 Player - _Sente)" Click="NewGameCpuSente_Click"/>
-                <MenuItem Header="New Game (1 Player - _Gote)" Click="NewGameCpuGote_Click"/>
+                <MenuItem Header="New Game (1 Player - _Black)" Click="NewGameCpuBlack_Click"/>
+                <MenuItem Header="New Game (1 Player - _White)" Click="NewGameCpuWhite_Click"/>
                 <MenuItem Header="New Game (0 Player - _Computer Only)" Click="NewGameCpuOnly_Click"/>
                 <Separator/>
                 <MenuItem Header="New _Mini Game (2 Players)" Click="NewMiniGame_Click"/>
-                <MenuItem Header="New Mini Game (1 _Player - Sente)" Click="NewMiniGameCpuSente_Click"/>
-                <MenuItem Header="New Mini Game (_1 Player - Gote)" Click="NewMiniGameCpuGote_Click"/>
+                <MenuItem Header="New Mini Game (1 _Player - Black)" Click="NewMiniGameCpuBlack_Click"/>
+                <MenuItem Header="New Mini Game (_1 Player - White)" Click="NewMiniGameCpuWhite_Click"/>
                 <MenuItem Header="New Mini Game (0 Player - Computer _Only)" Click="NewMiniGameCpuOnly_Click"/>
                 <Separator/>
                 <MenuItem Header="_Undo Move" Click="UndoMove_Click"/>
@@ -39,7 +39,7 @@
                 <MenuItem Header="Copy SFEN _to Clipboard" Click="FENCopy_Click"/>
             </MenuItem>
             <MenuItem Header="_Settings" Margin="2">
-                <MenuItem x:Name="flipBoardItem" Header="_Flip the Board on Gote's Turn" Click="SettingsCheckItem_Click" IsCheckable="True"/>
+                <MenuItem x:Name="flipBoardItem" Header="_Flip the Board on White's Turn" Click="SettingsCheckItem_Click" IsCheckable="True"/>
                 <MenuItem x:Name="updateEvalAfterBotItem" Header="Update _Evaluation Meter Automatically After Computer Move" Click="SettingsCheckItem_Click" IsCheckable="True"/>
                 <Separator/>
                 <MenuItem x:Name="pieceSetItem" Header="_Piece Set">
@@ -182,11 +182,11 @@
                     <Label Content="九" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
                 </Viewbox>
             </DockPanel>
-            <Viewbox x:Name="senteEvaluationView" Grid.Column="0" Grid.Row="2">
-                <Label x:Name="senteEvaluation" Content="?" Foreground="Navy" MouseUp="evaluation_MouseUp"/>
+            <Viewbox x:Name="blackEvaluationView" Grid.Column="0" Grid.Row="2">
+                <Label x:Name="blackEvaluation" Content="?" Foreground="Navy" MouseUp="evaluation_MouseUp"/>
             </Viewbox>
-            <Viewbox x:Name="goteEvaluationView" Grid.Column="2" Grid.Row="0">
-                <Label x:Name="goteEvaluation" Content="?" Foreground="Navy" MouseUp="evaluation_MouseUp"/>
+            <Viewbox x:Name="whiteEvaluationView" Grid.Column="2" Grid.Row="0">
+                <Label x:Name="whiteEvaluation" Content="?" Foreground="Navy" MouseUp="evaluation_MouseUp"/>
             </Viewbox>
             <Border Grid.Column="1" Grid.Row="1" BorderBrush="Black" BorderThickness="1">
                 <Grid>
@@ -272,66 +272,66 @@
                 <StackPanel x:Name="movesPanel"/>
             </ScrollViewer>
         </Border>
-        <Border x:Name="goteDropsContainer" Grid.Row="1" Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,0,1" ScrollViewer.HorizontalScrollBarVisibility="Auto">
-            <StackPanel x:Name="goteDropsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid x:Name="goteGoldGeneralDrop" Tag="{x:Type pieces:GoldGeneral}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Gold General.png" Tag="Gold General"/>
+        <Border x:Name="whiteDropsContainer" Grid.Row="1" Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,0,1" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+            <StackPanel x:Name="whiteDropsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid x:Name="whiteGoldGeneralDrop" Tag="{x:Type pieces:GoldGeneral}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Gold General.png" Tag="Gold General"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="goteSilverGeneralDrop" Tag="{x:Type pieces:SilverGeneral}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Silver General.png" Tag="Silver General"/>
+                <Grid x:Name="whiteSilverGeneralDrop" Tag="{x:Type pieces:SilverGeneral}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Silver General.png" Tag="Silver General"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="goteRookDrop" Tag="{x:Type pieces:Rook}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Rook.png" Tag="Rook"/>
+                <Grid x:Name="whiteRookDrop" Tag="{x:Type pieces:Rook}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Rook.png" Tag="Rook"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="goteBishopDrop" Tag="{x:Type pieces:Bishop}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Bishop.png" Tag="Bishop"/>
+                <Grid x:Name="whiteBishopDrop" Tag="{x:Type pieces:Bishop}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Bishop.png" Tag="Bishop"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="goteKnightDrop" Tag="{x:Type pieces:Knight}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Knight.png" Tag="Knight"/>
+                <Grid x:Name="whiteKnightDrop" Tag="{x:Type pieces:Knight}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Knight.png" Tag="Knight"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="goteLanceDrop" Tag="{x:Type pieces:Lance}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Lance.png" Tag="Lance"/>
+                <Grid x:Name="whiteLanceDrop" Tag="{x:Type pieces:Lance}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Lance.png" Tag="Lance"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="gotePawnDrop" Tag="{x:Type pieces:Pawn}" MouseUp="GoteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Gote/Pawn.png" Tag="Pawn"/>
+                <Grid x:Name="whitePawnDrop" Tag="{x:Type pieces:Pawn}" MouseUp="WhiteDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/White/Pawn.png" Tag="Pawn"/>
                     <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
             </StackPanel>
         </Border>
-        <Border x:Name="senteDropsContainer" Grid.Row="3" Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,0,1" ScrollViewer.HorizontalScrollBarVisibility="Auto">
-            <StackPanel x:Name="senteDropsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid x:Name="senteGoldGeneralDrop" Tag="{x:Type pieces:GoldGeneral}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Gold General.png" Tag="Gold General"/>
+        <Border x:Name="blackDropsContainer" Grid.Row="3" Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,0,1" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+            <StackPanel x:Name="blackDropsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid x:Name="blackGoldGeneralDrop" Tag="{x:Type pieces:GoldGeneral}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Gold General.png" Tag="Gold General"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="senteSilverGeneralDrop" Tag="{x:Type pieces:SilverGeneral}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Silver General.png" Tag="Silver General"/>
+                <Grid x:Name="blackSilverGeneralDrop" Tag="{x:Type pieces:SilverGeneral}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Silver General.png" Tag="Silver General"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="senteRookDrop" Tag="{x:Type pieces:Rook}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Rook.png" Tag="Rook"/>
+                <Grid x:Name="blackRookDrop" Tag="{x:Type pieces:Rook}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Rook.png" Tag="Rook"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="senteBishopDrop" Tag="{x:Type pieces:Bishop}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Bishop.png" Tag="Bishop"/>
+                <Grid x:Name="blackBishopDrop" Tag="{x:Type pieces:Bishop}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Bishop.png" Tag="Bishop"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="senteKnightDrop" Tag="{x:Type pieces:Knight}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Knight.png" Tag="Knight"/>
+                <Grid x:Name="blackKnightDrop" Tag="{x:Type pieces:Knight}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Knight.png" Tag="Knight"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="senteLanceDrop" Tag="{x:Type pieces:Lance}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Lance.png" Tag="Lance"/>
+                <Grid x:Name="blackLanceDrop" Tag="{x:Type pieces:Lance}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Lance.png" Tag="Lance"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
-                <Grid x:Name="sentePawnDrop" Tag="{x:Type pieces:Pawn}" MouseUp="SenteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Sente/Pawn.png" Tag="Pawn"/>
+                <Grid x:Name="blackPawnDrop" Tag="{x:Type pieces:Pawn}" MouseUp="BlackDrop_MouseUp">
+                    <Image Source="/Pieces/1kanji/Black/Pawn.png" Tag="Pawn"/>
                     <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"/>
                 </Grid>
             </StackPanel>

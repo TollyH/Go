@@ -8,21 +8,21 @@ using System.Text;
 namespace Go
 {
     /// <remarks>
-    /// CheckSente and CheckMateSente mean that the check is against sente,
-    /// or that sente has lost respectively, and vice versa.
+    /// CheckBlack and CheckMateBlack mean that the check is against black,
+    /// or that black has lost respectively, and vice versa.
     /// </remarks>
     public enum GameState
     {
         StandardPlay,
         DrawRepetition,
-        CheckSente,
-        CheckGote,
-        PerpetualCheckSente,
-        PerpetualCheckGote,
-        StalemateSente,
-        StalemateGote,
-        CheckMateSente,
-        CheckMateGote
+        CheckBlack,
+        CheckWhite,
+        PerpetualCheckBlack,
+        PerpetualCheckWhite,
+        StalemateBlack,
+        StalemateWhite,
+        CheckMateBlack,
+        CheckMateWhite
     }
 
     public class GoGame
@@ -30,12 +30,12 @@ namespace Go
         public static readonly ImmutableHashSet<GameState> EndingStates = new HashSet<GameState>()
         {
             GameState.DrawRepetition,
-            GameState.PerpetualCheckSente,
-            GameState.PerpetualCheckGote,
-            GameState.StalemateSente,
-            GameState.StalemateGote,
-            GameState.CheckMateSente,
-            GameState.CheckMateGote
+            GameState.PerpetualCheckBlack,
+            GameState.PerpetualCheckWhite,
+            GameState.StalemateBlack,
+            GameState.StalemateWhite,
+            GameState.CheckMateBlack,
+            GameState.CheckMateWhite
         }.ToImmutableHashSet();
 
         /// <summary>
@@ -60,13 +60,13 @@ namespace Go
         public Pieces.Piece?[,] Board { get; }
         public string InitialState { get; }
 
-        public int PromotionZoneSenteStart { get; }
-        public int PromotionZoneGoteStart { get; }
+        public int PromotionZoneBlackStart { get; }
+        public int PromotionZoneWhiteStart { get; }
 
-        public Pieces.King SenteKing { get; }
-        public Pieces.King GoteKing { get; }
+        public Pieces.King BlackKing { get; }
+        public Pieces.King WhiteKing { get; }
 
-        public bool CurrentTurnSente { get; private set; }
+        public bool CurrentTurnBlack { get; private set; }
         public bool GameOver { get; private set; }
         public bool AwaitingPromotionResponse { get; private set; }
 
@@ -78,8 +78,8 @@ namespace Go
         public List<string> JapaneseMoveText { get; }
         public List<string> WesternMoveText { get; }
         public GoGame? PreviousGameState { get; private set; }
-        public Dictionary<Type, int> SentePieceDrops { get; }
-        public Dictionary<Type, int> GotePieceDrops { get; }
+        public Dictionary<Type, int> BlackPieceDrops { get; }
+        public Dictionary<Type, int> WhitePieceDrops { get; }
 
         // Used to detect repetition
         public Dictionary<string, int> BoardCounts { get; }
@@ -89,17 +89,17 @@ namespace Go
         /// </summary>
         public GoGame(bool minigo)
         {
-            CurrentTurnSente = true;
+            CurrentTurnBlack = true;
             GameOver = false;
             AwaitingPromotionResponse = false;
 
-            SenteKing = new Pieces.King(new Point(minigo ? 0 : 4, 0), true);
-            GoteKing = new Pieces.King(new Point(4, minigo ? 4 : 8), false);
+            BlackKing = new Pieces.King(new Point(minigo ? 0 : 4, 0), true);
+            WhiteKing = new Pieces.King(new Point(4, minigo ? 4 : 8), false);
 
             Moves = new List<(string, Point, Point, bool, bool)>();
             JapaneseMoveText = new List<string>();
             WesternMoveText = new List<string>();
-            SentePieceDrops = new Dictionary<Type, int>()
+            BlackPieceDrops = new Dictionary<Type, int>()
             {
                 { typeof(Pieces.GoldGeneral), 0 },
                 { typeof(Pieces.SilverGeneral), 0 },
@@ -109,7 +109,7 @@ namespace Go
                 { typeof(Pieces.Lance), 0 },
                 { typeof(Pieces.Pawn), 0 },
             };
-            GotePieceDrops = new Dictionary<Type, int>()
+            WhitePieceDrops = new Dictionary<Type, int>()
             {
                 { typeof(Pieces.GoldGeneral), 0 },
                 { typeof(Pieces.SilverGeneral), 0 },
@@ -125,11 +125,11 @@ namespace Go
             Board = minigo
             ? new Pieces.Piece?[5, 5]
                 {
-                    { SenteKing, new Pieces.Pawn(new Point(0, 1), true), null, null, new Pieces.Rook(new Point(0, 4), false) },
+                    { BlackKing, new Pieces.Pawn(new Point(0, 1), true), null, null, new Pieces.Rook(new Point(0, 4), false) },
                     { new Pieces.GoldGeneral(new Point(1, 0), true), null, null, null, new Pieces.Bishop(new Point(1, 4), false) },
                     { new Pieces.SilverGeneral(new Point(2, 0), true), null, null, null, new Pieces.SilverGeneral(new Point(2, 4), false) },
                     { new Pieces.Bishop(new Point(3, 0), true), null, null, null, new Pieces.GoldGeneral(new Point(3, 4), false) },
-                    { new Pieces.Rook(new Point(4, 0), true), null, null, new Pieces.Pawn(new Point(4, 3), false), GoteKing }
+                    { new Pieces.Rook(new Point(4, 0), true), null, null, new Pieces.Pawn(new Point(4, 3), false), WhiteKing }
                 }
             : new Pieces.Piece?[9, 9]
                 {
@@ -137,14 +137,14 @@ namespace Go
                     { new Pieces.Knight(new Point(1, 0), true), new Pieces.Bishop(new Point(1, 1), true), new Pieces.Pawn(new Point(1, 2), true), null, null, null, new Pieces.Pawn(new Point(1, 6), false), new Pieces.Rook(new Point(1, 7), false), new Pieces.Knight(new Point(1, 8), false) },
                     { new Pieces.SilverGeneral(new Point(2, 0), true), null, new Pieces.Pawn(new Point(2, 2), true), null, null, null, new Pieces.Pawn(new Point(2, 6), false), null, new Pieces.SilverGeneral(new Point(2, 8), false) },
                     { new Pieces.GoldGeneral(new Point(3, 0), true), null, new Pieces.Pawn(new Point(3, 2), true), null, null, null, new Pieces.Pawn(new Point(3, 6), false), null, new Pieces.GoldGeneral(new Point(3, 8), false) },
-                    { SenteKing, null, new Pieces.Pawn(new Point(4, 2), true), null, null, null, new Pieces.Pawn(new Point(4, 6), false), null, GoteKing },
+                    { BlackKing, null, new Pieces.Pawn(new Point(4, 2), true), null, null, null, new Pieces.Pawn(new Point(4, 6), false), null, WhiteKing },
                     { new Pieces.GoldGeneral(new Point(5, 0), true), null, new Pieces.Pawn(new Point(5, 2), true), null, null, null, new Pieces.Pawn(new Point(5, 6), false), null, new Pieces.GoldGeneral(new Point(5, 8), false) },
                     { new Pieces.SilverGeneral(new Point(6, 0), true), null, new Pieces.Pawn(new Point(6, 2), true), null, null, null, new Pieces.Pawn(new Point(6, 6), false), null, new Pieces.SilverGeneral(new Point(6, 8), false) },
                     { new Pieces.Knight(new Point(7, 0), true), new Pieces.Rook(new Point(7, 1), true), new Pieces.Pawn(new Point(7, 2), true), null, null, null, new Pieces.Pawn(new Point(7, 6), false), new Pieces.Bishop(new Point(7, 7), false), new Pieces.Knight(new Point(7, 8), false) },
                     { new Pieces.Lance(new Point(8, 0), true), null, new Pieces.Pawn(new Point(8, 2), true), null, null, null, new Pieces.Pawn(new Point(8, 6), false), null, new Pieces.Lance(new Point(8, 8), false) }
                 };
-            PromotionZoneSenteStart = minigo ? 4 : 6;
-            PromotionZoneGoteStart = minigo ? 0 : 2;
+            PromotionZoneBlackStart = minigo ? 4 : 6;
+            PromotionZoneWhiteStart = minigo ? 0 : 2;
 
             InitialState = ToString();
         }
@@ -152,10 +152,10 @@ namespace Go
         /// <summary>
         /// Create a new instance of a go game, setting each game parameter to a non-default value
         /// </summary>
-        public GoGame(Pieces.Piece?[,] board, bool currentTurnSente, bool gameOver,
+        public GoGame(Pieces.Piece?[,] board, bool currentTurnBlack, bool gameOver,
             List<(string, Point, Point, bool, bool)> moves, List<string> japaneseMoveText,
-            List<string> westernMoveText, Dictionary<Type, int>? sentePieceDrops,
-            Dictionary<Type, int>? gotePieceDrops, Dictionary<string, int> boardCounts,
+            List<string> westernMoveText, Dictionary<Type, int>? blackPieceDrops,
+            Dictionary<Type, int>? whitePieceDrops, Dictionary<string, int> boardCounts,
             string? initialState, GoGame? previousGameState)
         {
             if (board.GetLength(0) is not 9 and not 5 || board.GetLength(1) is not 9 and not 5)
@@ -166,17 +166,17 @@ namespace Go
             bool minigo = board.GetLength(0) == 5;
 
             Board = board;
-            PromotionZoneSenteStart = minigo ? 4 : 6;
-            PromotionZoneGoteStart = minigo ? 0 : 2;
-            SenteKing = Board.OfType<Pieces.King>().Where(k => k.IsSente).First();
-            GoteKing = Board.OfType<Pieces.King>().Where(k => !k.IsSente).First();
+            PromotionZoneBlackStart = minigo ? 4 : 6;
+            PromotionZoneWhiteStart = minigo ? 0 : 2;
+            BlackKing = Board.OfType<Pieces.King>().Where(k => k.IsBlack).First();
+            WhiteKing = Board.OfType<Pieces.King>().Where(k => !k.IsBlack).First();
 
-            CurrentTurnSente = currentTurnSente;
+            CurrentTurnBlack = currentTurnBlack;
             GameOver = gameOver;
             Moves = moves;
             JapaneseMoveText = japaneseMoveText;
             WesternMoveText = westernMoveText;
-            SentePieceDrops = sentePieceDrops ?? new Dictionary<Type, int>()
+            BlackPieceDrops = blackPieceDrops ?? new Dictionary<Type, int>()
             {
                 { typeof(Pieces.GoldGeneral), 0 },
                 { typeof(Pieces.SilverGeneral), 0 },
@@ -186,7 +186,7 @@ namespace Go
                 { typeof(Pieces.Lance), 0 },
                 { typeof(Pieces.Pawn), 0 },
             };
-            GotePieceDrops = gotePieceDrops ?? new Dictionary<Type, int>()
+            WhitePieceDrops = whitePieceDrops ?? new Dictionary<Type, int>()
             {
                 { typeof(Pieces.GoldGeneral), 0 },
                 { typeof(Pieces.SilverGeneral), 0 },
@@ -216,9 +216,9 @@ namespace Go
                 }
             }
 
-            return new GoGame(boardClone, CurrentTurnSente, GameOver, new(Moves), new(JapaneseMoveText),
-                new(WesternMoveText), new Dictionary<Type, int>(SentePieceDrops),
-                new Dictionary<Type, int>(GotePieceDrops), new(BoardCounts), InitialState, PreviousGameState?.Clone());
+            return new GoGame(boardClone, CurrentTurnBlack, GameOver, new(Moves), new(JapaneseMoveText),
+                new(WesternMoveText), new Dictionary<Type, int>(BlackPieceDrops),
+                new Dictionary<Type, int>(WhitePieceDrops), new(BoardCounts), InitialState, PreviousGameState?.Clone());
         }
 
         /// <summary>
@@ -229,12 +229,12 @@ namespace Go
         /// </remarks>
         public GameState DetermineGameState(bool includeRepetition = true)
         {
-            GameState staticState = BoardAnalysis.DetermineGameState(Board, CurrentTurnSente,
-                SenteKing.Position, GoteKing.Position);
+            GameState staticState = BoardAnalysis.DetermineGameState(Board, CurrentTurnBlack,
+                BlackKing.Position, WhiteKing.Position);
             if (EndingStates.Contains(staticState))
             {
                 bool endAvoidableWithDrop = false;
-                foreach ((Type dropType, int count) in CurrentTurnSente ? SentePieceDrops : GotePieceDrops)
+                foreach ((Type dropType, int count) in CurrentTurnBlack ? BlackPieceDrops : WhitePieceDrops)
                 {
                     if (count > 0)
                     {
@@ -266,15 +266,15 @@ namespace Go
                 }
                 else
                 {
-                    staticState = staticState is GameState.CheckMateSente or GameState.StalemateSente
-                        ? GameState.CheckSente : GameState.CheckGote;
+                    staticState = staticState is GameState.CheckMateBlack or GameState.StalemateBlack
+                        ? GameState.CheckBlack : GameState.CheckWhite;
                 }
             }
             if (includeRepetition && BoardCounts.GetValueOrDefault(ToString(true)) >= 4)
             {
                 if (ToString(true)[^1] == '!')
                 {
-                    return CurrentTurnSente ? GameState.PerpetualCheckSente : GameState.PerpetualCheckGote;
+                    return CurrentTurnBlack ? GameState.PerpetualCheckBlack : GameState.PerpetualCheckWhite;
                 }
                 return GameState.DrawRepetition;
             }
@@ -291,8 +291,8 @@ namespace Go
             {
                 return false;
             }
-            if ((CurrentTurnSente && SentePieceDrops[dropType] == 0)
-                || (!CurrentTurnSente && GotePieceDrops[dropType] == 0))
+            if ((CurrentTurnBlack && BlackPieceDrops[dropType] == 0)
+                || (!CurrentTurnBlack && WhitePieceDrops[dropType] == 0))
             {
                 return false;
             }
@@ -301,9 +301,9 @@ namespace Go
                 return false;
             }
             if (((dropType == typeof(Pieces.Pawn) || dropType == typeof(Pieces.Lance))
-                    && (destination.Y == (CurrentTurnSente ? Board.GetLength(1) - 1 : 0)))
+                    && (destination.Y == (CurrentTurnBlack ? Board.GetLength(1) - 1 : 0)))
                 || (dropType == typeof(Pieces.Knight)
-                    && (CurrentTurnSente ? destination.Y >= Board.GetLength(1) - 2 : destination.Y <= 1)))
+                    && (CurrentTurnBlack ? destination.Y >= Board.GetLength(1) - 2 : destination.Y <= 1)))
             {
                 return false;
             }
@@ -311,13 +311,13 @@ namespace Go
             GoGame checkmateTest = Clone();
             _ = checkmateTest.MovePiece(new Point(-1, Array.IndexOf(DropTypeOrder, dropType)),
                 destination, forceMove: true, updateMoveText: false, determineGameState: false);
-            GameState resultingGameState = BoardAnalysis.DetermineGameState(checkmateTest.Board, checkmateTest.CurrentTurnSente,
-                checkmateTest.SenteKing.Position, checkmateTest.GoteKing.Position);
+            GameState resultingGameState = BoardAnalysis.DetermineGameState(checkmateTest.Board, checkmateTest.CurrentTurnBlack,
+                checkmateTest.BlackKing.Position, checkmateTest.WhiteKing.Position);
 
-            if ((CurrentTurnSente && BoardAnalysis.IsKingReachable(checkmateTest.Board,
-                    true, checkmateTest.SenteKing.Position))
-                || (!CurrentTurnSente && BoardAnalysis.IsKingReachable(checkmateTest.Board,
-                    false, checkmateTest.GoteKing.Position)))
+            if ((CurrentTurnBlack && BoardAnalysis.IsKingReachable(checkmateTest.Board,
+                    true, checkmateTest.BlackKing.Position))
+                || (!CurrentTurnBlack && BoardAnalysis.IsKingReachable(checkmateTest.Board,
+                    false, checkmateTest.WhiteKing.Position)))
             {
                 return false;
             }
@@ -326,7 +326,7 @@ namespace Go
             for (int y = 0; y < Board.GetLength(1); y++)
             {
                 if (Board[destination.X, y] is Pieces.Pawn
-                    && Board[destination.X, y]!.IsSente == CurrentTurnSente)
+                    && Board[destination.X, y]!.IsBlack == CurrentTurnBlack)
                 {
                     pawnPresentOnFile = true;
                     break;
@@ -334,7 +334,7 @@ namespace Go
             }
 
             if (dropType == typeof(Pieces.Pawn) && (pawnPresentOnFile
-                || resultingGameState is GameState.CheckMateSente or GameState.CheckMateGote))
+                || resultingGameState is GameState.CheckMateBlack or GameState.CheckMateWhite))
             {
                 return false;
             }
@@ -368,18 +368,18 @@ namespace Go
             {
                 // Piece drop
                 Type dropType = DropTypeOrder[source.Y];
-                piece = (Pieces.Piece)Activator.CreateInstance(dropType, destination, CurrentTurnSente)!;
+                piece = (Pieces.Piece)Activator.CreateInstance(dropType, destination, CurrentTurnBlack)!;
                 if (!forceMove && !IsDropPossible(dropType, destination))
                 {
                     return false;
                 }
-                if (CurrentTurnSente && SentePieceDrops[dropType] > 0)
+                if (CurrentTurnBlack && BlackPieceDrops[dropType] > 0)
                 {
-                    SentePieceDrops[dropType]--;
+                    BlackPieceDrops[dropType]--;
                 }
-                else if (GotePieceDrops[dropType] > 0)
+                else if (WhitePieceDrops[dropType] > 0)
                 {
-                    GotePieceDrops[dropType]--;
+                    WhitePieceDrops[dropType]--;
                 }
             }
             else
@@ -389,7 +389,7 @@ namespace Go
                 {
                     return false;
                 }
-                if (!forceMove && piece.IsSente != CurrentTurnSente)
+                if (!forceMove && piece.IsBlack != CurrentTurnBlack)
                 {
                     return false;
                 }
@@ -415,15 +415,15 @@ namespace Go
                     {
                         targetPiece = Pieces.Piece.DemotionMap[targetPiece];
                     }
-                    if (SentePieceDrops.ContainsKey(targetPiece))
+                    if (BlackPieceDrops.ContainsKey(targetPiece))
                     {
-                        if (CurrentTurnSente)
+                        if (CurrentTurnBlack)
                         {
-                            SentePieceDrops[targetPiece]++;
+                            BlackPieceDrops[targetPiece]++;
                         }
                         else
                         {
-                            GotePieceDrops[targetPiece]++;
+                            WhitePieceDrops[targetPiece]++;
                         }
                     }
                 }
@@ -434,12 +434,12 @@ namespace Go
                 Type pieceType = piece.GetType();
                 if (source.X != -1 && Pieces.Piece.PromotionMap.ContainsKey(pieceType))
                 {
-                    if ((piece.IsSente ? destination.Y >= PromotionZoneSenteStart : destination.Y <= PromotionZoneGoteStart)
-                        || (piece.IsSente ? source.Y >= PromotionZoneSenteStart : source.Y <= PromotionZoneGoteStart))
+                    if ((piece.IsBlack ? destination.Y >= PromotionZoneBlackStart : destination.Y <= PromotionZoneWhiteStart)
+                        || (piece.IsBlack ? source.Y >= PromotionZoneBlackStart : source.Y <= PromotionZoneWhiteStart))
                     {
                         promotionPossible = true;
-                        if ((piece is Pieces.Pawn or Pieces.Lance && (destination.Y == (piece.IsSente ? Board.GetLength(1) - 1 : 0)))
-                            || (piece is Pieces.Knight && (piece.IsSente ? destination.Y >= Board.GetLength(1) - 2 : destination.Y <= 1)))
+                        if ((piece is Pieces.Pawn or Pieces.Lance && (destination.Y == (piece.IsBlack ? Board.GetLength(1) - 1 : 0)))
+                            || (piece is Pieces.Knight && (piece.IsBlack ? destination.Y >= Board.GetLength(1) - 2 : destination.Y <= 1)))
                         {
                             // Always promote pawns and lances upon reaching the last rank
                             // Always promote knights upon reaching the last two ranks
@@ -455,7 +455,7 @@ namespace Go
                         {
                             promotionHappened = true;
                             Moves[^1] = (Moves[^1].Item1, source, destination, true, false);
-                            piece = (Pieces.Piece)Activator.CreateInstance(Pieces.Piece.PromotionMap[pieceType], piece.Position, piece.IsSente)!;
+                            piece = (Pieces.Piece)Activator.CreateInstance(Pieces.Piece.PromotionMap[pieceType], piece.Position, piece.IsBlack)!;
                         }
                         Board[source.X, source.Y] = piece;
                     }
@@ -467,7 +467,7 @@ namespace Go
                     Board[source.X, source.Y] = null;
                 }
 
-                CurrentTurnSente = !CurrentTurnSente;
+                CurrentTurnBlack = !CurrentTurnBlack;
 
                 string newBoardString = ToString(true);
                 if (BoardCounts.ContainsKey(newBoardString))
@@ -485,14 +485,14 @@ namespace Go
 
                 if (updateMoveText)
                 {
-                    string newJapaneseMove = (CurrentTurnSente ? "☖" : "☗")
+                    string newJapaneseMove = (CurrentTurnBlack ? "☖" : "☗")
                         + (Moves.Count > 1 && destination == Moves[^2].Item3 ? "同　" : destination.ToGoCoordinate(Board.GetLength(0) == 5))
                         + beforePromotion.SymbolLetter;
                     string newWesternMove = beforePromotion.SFENLetter;
 
                     // Disambiguate moving piece if two pieces of the same type can reach destination
                     IEnumerable<Pieces.Piece> canReachDest = oldGame!.Board.OfType<Pieces.Piece>().Where(
-                        p => beforePromotion.GetType() == p.GetType() && p.Position != source && p.IsSente == beforePromotion.IsSente
+                        p => beforePromotion.GetType() == p.GetType() && p.Position != source && p.IsBlack == beforePromotion.IsBlack
                             && p.GetValidMoves(oldGame.Board, true).Contains(destination));
                     if (canReachDest.Any())
                     {
@@ -503,11 +503,11 @@ namespace Go
                         }
                         else if (destination.Y > source.Y && !canReachDest.Where(p => destination.Y > p.Position.Y).Any())
                         {
-                            newJapaneseMove += CurrentTurnSente ? '引' : '上';
+                            newJapaneseMove += CurrentTurnBlack ? '引' : '上';
                         }
                         else if (destination.Y < source.Y && !canReachDest.Where(p => destination.Y < p.Position.Y).Any())
                         {
-                            newJapaneseMove += CurrentTurnSente ? '上' : '引';
+                            newJapaneseMove += CurrentTurnBlack ? '上' : '引';
                         }
                         else if (destination.Y == source.Y && !canReachDest.Where(p => destination.Y == p.Position.Y).Any())
                         {
@@ -515,11 +515,11 @@ namespace Go
                         }
                         else if (destination.X > source.X && !canReachDest.Where(p => destination.X > p.Position.X).Any())
                         {
-                            newJapaneseMove += CurrentTurnSente ? "右" : "左";
+                            newJapaneseMove += CurrentTurnBlack ? "右" : "左";
                         }
                         else if (destination.X < source.X && !canReachDest.Where(p => destination.X < p.Position.X).Any())
                         {
-                            newJapaneseMove += CurrentTurnSente ? "左" : "右";
+                            newJapaneseMove += CurrentTurnBlack ? "左" : "右";
                         }
                         else
                         {
@@ -585,7 +585,7 @@ namespace Go
                             _ = result.Append(consecutiveNull);
                             consecutiveNull = 0;
                         }
-                        _ = result.Append(piece.IsSente ? piece.SFENLetter.ToUpper() : piece.SFENLetter.ToLower());
+                        _ = result.Append(piece.IsBlack ? piece.SFENLetter.ToUpper() : piece.SFENLetter.ToLower());
                     }
                 }
                 if (consecutiveNull > 0)
@@ -598,10 +598,10 @@ namespace Go
                 }
             }
 
-            _ = result.Append(CurrentTurnSente ? " b " : " w ");
+            _ = result.Append(CurrentTurnBlack ? " b " : " w ");
 
             bool anyHeldPieces = false;
-            foreach ((Type pieceType, int count) in SentePieceDrops)
+            foreach ((Type pieceType, int count) in BlackPieceDrops)
             {
                 if (count == 0)
                 {
@@ -614,7 +614,7 @@ namespace Go
                 }
                 _ = result.Append(Pieces.Piece.DefaultPieces[pieceType].SFENLetter.ToUpper());
             }
-            foreach ((Type pieceType, int count) in GotePieceDrops)
+            foreach ((Type pieceType, int count) in WhitePieceDrops)
             {
                 if (count == 0)
                 {
@@ -633,9 +633,9 @@ namespace Go
             }
 
             // Append whether in check or not for checking whether perpetual check occurred
-            Pieces.King currentKing = CurrentTurnSente ? SenteKing : GoteKing;
+            Pieces.King currentKing = CurrentTurnBlack ? BlackKing : WhiteKing;
             _ = !appendCheckStatus ? null
-                : result.Append(BoardAnalysis.IsKingReachable(Board, CurrentTurnSente, currentKing.Position) ? " !" : " -");
+                : result.Append(BoardAnalysis.IsKingReachable(Board, CurrentTurnBlack, currentKing.Position) ? " !" : " -");
 
             return result.ToString();
         }
@@ -643,20 +643,20 @@ namespace Go
         /// <summary>
         /// Convert this game to a KIF file for use in other go programs
         /// </summary>
-        public string ToKIF(string? eventName, string? siteName, DateOnly? startDate, string senteName, string goteName,
-            bool senteIsComputer, bool goteIsComputer)
+        public string ToKIF(string? eventName, string? siteName, DateOnly? startDate, string blackName, string whiteName,
+            bool blackIsComputer, bool whiteIsComputer)
         {
             bool minigo = Board.GetLength(0) == 5;
 
             GameState state = DetermineGameState();
             string kif = (minigo ? "手合割：5五将棋\n" : "") +
-                $"先手：{senteName}\n" +
-                $"後手：{goteName}\n" +
+                $"先手：{blackName}\n" +
+                $"後手：{whiteName}\n" +
                 (startDate is not null ? $"開始日時：{startDate.Value:yyyy'/'MM'/'dd}\n" : "") +
                 (eventName is not null ? $"棋戦：{eventName}\n" : "") +
                 (siteName is not null ? $"場所：{siteName}\n" : "") +
-                $"先手タイプ：{(senteIsComputer ? "プログラム" : "人間")}\n" +
-                $"後手タイプ：{(goteIsComputer ? "プログラム" : "人間")}\n";
+                $"先手タイプ：{(blackIsComputer ? "プログラム" : "人間")}\n" +
+                $"後手タイプ：{(whiteIsComputer ? "プログラム" : "人間")}\n";
 
             // Include initial state if not a standard go game
             if ((InitialState != "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -" && !minigo)
@@ -666,7 +666,7 @@ namespace Go
                 GoGame initialGame = FromGoForsythEdwards(InitialState);
 
                 bool anyDrops = false;
-                foreach ((Type dropType, int count) in initialGame.GotePieceDrops)
+                foreach ((Type dropType, int count) in initialGame.WhitePieceDrops)
                 {
                     if (count != 0)
                     {
@@ -691,14 +691,14 @@ namespace Go
                             continue;
                         }
                         Pieces.Piece piece = initialGame.Board[x, y]!;
-                        kif += $"{(piece.IsSente ? ' ' : 'v')}{piece.SingleLetter}";
+                        kif += $"{(piece.IsBlack ? ' ' : 'v')}{piece.SingleLetter}";
                     }
                     kif += $"|{(Board.GetLength(1) - y).ToJapaneseKanji()}";
                 }
 
                 kif += minigo ? "\n+---------------+\n先手の持駒：" : "\n+---------------------------+\n先手の持駒：";
                 anyDrops = false;
-                foreach ((Type dropType, int count) in initialGame.SentePieceDrops)
+                foreach ((Type dropType, int count) in initialGame.BlackPieceDrops)
                 {
                     if (count != 0)
                     {
@@ -710,7 +710,7 @@ namespace Go
                 {
                     kif += " なし";
                 }
-                if (!initialGame.CurrentTurnSente)
+                if (!initialGame.CurrentTurnBlack)
                 {
                     kif += "\n後手番";
                 }
@@ -745,7 +745,7 @@ namespace Go
             }
             kif += compiledMoveText + $" {Moves.Count + 1}  ";
             kif += !GameOver ? "中断\n\n" : state == GameState.DrawRepetition ? "千日手\n\n"
-                : state is GameState.PerpetualCheckGote or GameState.PerpetualCheckSente ? "反則勝ち\n\n" : "詰み\n\n";
+                : state is GameState.PerpetualCheckWhite or GameState.PerpetualCheckBlack ? "反則勝ち\n\n" : "詰み\n\n";
 
             return kif;
         }
@@ -877,10 +877,10 @@ namespace Go
                 }
             }
 
-            bool currentTurnSente = fields[1] == "b" || (fields[1] == "w" ? false
+            bool currentTurnBlack = fields[1] == "b" || (fields[1] == "w" ? false
                 : throw new FormatException("Current turn specifier must be either w or b"));
 
-            Dictionary<Type, int> sentePieceDrops = new()
+            Dictionary<Type, int> blackPieceDrops = new()
             {
                 { typeof(Pieces.GoldGeneral), 0 },
                 { typeof(Pieces.SilverGeneral), 0 },
@@ -890,7 +890,7 @@ namespace Go
                 { typeof(Pieces.Lance), 0 },
                 { typeof(Pieces.Pawn), 0 },
             };
-            Dictionary<Type, int> gotePieceDrops = new()
+            Dictionary<Type, int> whitePieceDrops = new()
             {
                 { typeof(Pieces.GoldGeneral), 0 },
                 { typeof(Pieces.SilverGeneral), 0 },
@@ -910,46 +910,46 @@ namespace Go
                     case '-':
                         continue;
                     case 'G':
-                        sentePieceDrops[typeof(Pieces.GoldGeneral)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.GoldGeneral)] += numberToAdd;
                         break;
                     case 'S':
-                        sentePieceDrops[typeof(Pieces.SilverGeneral)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.SilverGeneral)] += numberToAdd;
                         break;
                     case 'R':
-                        sentePieceDrops[typeof(Pieces.Rook)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.Rook)] += numberToAdd;
                         break;
                     case 'B':
-                        sentePieceDrops[typeof(Pieces.Bishop)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.Bishop)] += numberToAdd;
                         break;
                     case 'N':
-                        sentePieceDrops[typeof(Pieces.Knight)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.Knight)] += numberToAdd;
                         break;
                     case 'L':
-                        sentePieceDrops[typeof(Pieces.Lance)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.Lance)] += numberToAdd;
                         break;
                     case 'P':
-                        sentePieceDrops[typeof(Pieces.Pawn)] += numberToAdd;
+                        blackPieceDrops[typeof(Pieces.Pawn)] += numberToAdd;
                         break;
                     case 'g':
-                        gotePieceDrops[typeof(Pieces.GoldGeneral)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.GoldGeneral)] += numberToAdd;
                         break;
                     case 's':
-                        gotePieceDrops[typeof(Pieces.SilverGeneral)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.SilverGeneral)] += numberToAdd;
                         break;
                     case 'r':
-                        gotePieceDrops[typeof(Pieces.Rook)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.Rook)] += numberToAdd;
                         break;
                     case 'b':
-                        gotePieceDrops[typeof(Pieces.Bishop)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.Bishop)] += numberToAdd;
                         break;
                     case 'n':
-                        gotePieceDrops[typeof(Pieces.Knight)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.Knight)] += numberToAdd;
                         break;
                     case 'l':
-                        gotePieceDrops[typeof(Pieces.Lance)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.Lance)] += numberToAdd;
                         break;
                     case 'p':
-                        gotePieceDrops[typeof(Pieces.Pawn)] += numberToAdd;
+                        whitePieceDrops[typeof(Pieces.Pawn)] += numberToAdd;
                         break;
                     default:
                         if (pieceChar is > '0' and <= '9')
@@ -978,8 +978,8 @@ namespace Go
             }
 
             // Go Forsyth–Edwards doesn't define what the previous moves were, so they moves list starts empty
-            return new GoGame(board, currentTurnSente, EndingStates.Contains(BoardAnalysis.DetermineGameState(board, currentTurnSente)),
-                new(), new(), new(), sentePieceDrops, gotePieceDrops, new(), null, null);
+            return new GoGame(board, currentTurnBlack, EndingStates.Contains(BoardAnalysis.DetermineGameState(board, currentTurnBlack)),
+                new(), new(), new(), blackPieceDrops, whitePieceDrops, new(), null, null);
         }
     }
 }

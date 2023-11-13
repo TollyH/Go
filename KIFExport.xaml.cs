@@ -11,27 +11,27 @@ namespace Go
     public partial class KIFExport : Window
     {
         private readonly GoGame game;
-        private readonly bool senteIsComputer;
-        private readonly bool goteIsComputer;
+        private readonly bool blackIsComputer;
+        private readonly bool whiteIsComputer;
 
-        public KIFExport(GoGame game, bool senteIsComputer, bool goteIsComputer)
+        public KIFExport(GoGame game, bool blackIsComputer, bool whiteIsComputer)
         {
             this.game = game;
-            this.senteIsComputer = senteIsComputer;
-            this.goteIsComputer = goteIsComputer;
+            this.blackIsComputer = blackIsComputer;
+            this.whiteIsComputer = whiteIsComputer;
             InitializeComponent();
 
-            if (senteIsComputer)
+            if (blackIsComputer)
             {
-                senteNameBox.Text = "Computer";
-                senteNameBox.IsReadOnly = true;
-                senteNameBox.IsEnabled = false;
+                blackNameBox.Text = "Computer";
+                blackNameBox.IsReadOnly = true;
+                blackNameBox.IsEnabled = false;
             }
-            if (goteIsComputer)
+            if (whiteIsComputer)
             {
-                goteNameBox.Text = "Computer";
-                goteNameBox.IsReadOnly = true;
-                goteNameBox.IsEnabled = false;
+                whiteNameBox.Text = "Computer";
+                whiteNameBox.IsReadOnly = true;
+                whiteNameBox.IsEnabled = false;
             }
         }
 
@@ -51,11 +51,11 @@ namespace Go
             string eventName = eventNameBox.Text.Trim();
             string locationName = locationNameBox.Text.Trim();
             DateOnly? date = dateBox.SelectedDate is null ? null : DateOnly.FromDateTime(dateBox.SelectedDate.Value);
-            string senteName = senteNameBox.Text.Trim();
-            string goteName = goteNameBox.Text.Trim();
+            string blackName = blackNameBox.Text.Trim();
+            string whiteName = whiteNameBox.Text.Trim();
             File.WriteAllText(saveDialog.FileName, game.ToKIF(eventName != "" ? eventName : null,
-                locationName != "" ? locationName : null, date, senteName != "" ? senteName : "Player",
-                goteName != "" ? goteName : "Player", senteIsComputer, goteIsComputer));
+                locationName != "" ? locationName : null, date, blackName != "" ? blackName : "Player",
+                whiteName != "" ? whiteName : "Player", blackIsComputer, whiteIsComputer));
             Close();
         }
     }

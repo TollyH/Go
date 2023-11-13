@@ -14,14 +14,14 @@ namespace Go
         /// Determine whether a king can be reached by any of the opponents pieces
         /// </summary>
         /// <param name="board">The state of the board to check</param>
-        /// <param name="isSente">Is the king to check sente?</param>
+        /// <param name="isBlack">Is the king to check black?</param>
         /// <param name="target">Override the position of the king to check</param>
         /// <remarks><paramref name="target"/> should always be given if checking a not-yet-peformed king move, as the king's internally stored position will be incorrect.</remarks>
-        public static bool IsKingReachable(Pieces.Piece?[,] board, bool isSente, Point? target = null)
+        public static bool IsKingReachable(Pieces.Piece?[,] board, bool isBlack, Point? target = null)
         {
-            target ??= board.OfType<Pieces.King>().Where(x => x.IsSente == isSente).First().Position;
+            target ??= board.OfType<Pieces.King>().Where(x => x.IsBlack == isBlack).First().Position;
 
-            int backwardsY = isSente ? -1 : 1;
+            int backwardsY = isBlack ? -1 : 1;
             // King, promoted bishop straights, promoted rook diagonals, gold general (and equivalents), silver general check
             for (int dx = -1; dx <= 1; dx++)
             {
@@ -31,7 +31,7 @@ namespace Go
                     {
                         Point newPos = new(target.Value.X + dx, target.Value.Y + dy);
                         if (newPos.X >= 0 && newPos.Y >= 0 && newPos.X < board.GetLength(0) && newPos.Y < board.GetLength(1)
-                            && board[newPos.X, newPos.Y] is Pieces.Piece piece && board[newPos.X, newPos.Y]!.IsSente != isSente)
+                            && board[newPos.X, newPos.Y] is Pieces.Piece piece && board[newPos.X, newPos.Y]!.IsBlack != isBlack)
                         {
                             if (piece is Pieces.King or Pieces.PromotedBishop or Pieces.PromotedRook)
                             {
@@ -57,7 +57,7 @@ namespace Go
                 Point newPos = new(dx, target.Value.Y);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         board[newPos.X, newPos.Y] is Pieces.Rook or Pieces.PromotedRook)
                     {
                         return true;
@@ -70,7 +70,7 @@ namespace Go
                 Point newPos = new(dx, target.Value.Y);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         board[newPos.X, newPos.Y] is Pieces.Rook or Pieces.PromotedRook)
                     {
                         return true;
@@ -83,9 +83,9 @@ namespace Go
                 Point newPos = new(target.Value.X, dy);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         (board[newPos.X, newPos.Y] is Pieces.Rook or Pieces.PromotedRook
-                            || (board[newPos.X, newPos.Y] is Pieces.Lance lance && !lance.IsSente)))
+                            || (board[newPos.X, newPos.Y] is Pieces.Lance lance && !lance.IsBlack)))
                     {
                         return true;
                     }
@@ -97,9 +97,9 @@ namespace Go
                 Point newPos = new(target.Value.X, dy);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         (board[newPos.X, newPos.Y] is Pieces.Rook or Pieces.PromotedRook
-                            || (board[newPos.X, newPos.Y] is Pieces.Lance lance && lance.IsSente)))
+                            || (board[newPos.X, newPos.Y] is Pieces.Lance lance && lance.IsBlack)))
                     {
                         return true;
                     }
@@ -113,7 +113,7 @@ namespace Go
                 Point newPos = new(target.Value.X + dif, target.Value.Y + dif);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         board[newPos.X, newPos.Y] is Pieces.Bishop or Pieces.PromotedBishop)
                     {
                         return true;
@@ -126,7 +126,7 @@ namespace Go
                 Point newPos = new(target.Value.X - dif, target.Value.Y + dif);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         board[newPos.X, newPos.Y] is Pieces.Bishop or Pieces.PromotedBishop)
                     {
                         return true;
@@ -139,7 +139,7 @@ namespace Go
                 Point newPos = new(target.Value.X - dif, target.Value.Y - dif);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         board[newPos.X, newPos.Y] is Pieces.Bishop or Pieces.PromotedBishop)
                     {
                         return true;
@@ -152,7 +152,7 @@ namespace Go
                 Point newPos = new(target.Value.X + dif, target.Value.Y - dif);
                 if (board[newPos.X, newPos.Y] is not null)
                 {
-                    if (board[newPos.X, newPos.Y]!.IsSente != isSente &&
+                    if (board[newPos.X, newPos.Y]!.IsBlack != isBlack &&
                         board[newPos.X, newPos.Y] is Pieces.Bishop or Pieces.PromotedBishop)
                     {
                         return true;
@@ -162,26 +162,26 @@ namespace Go
             }
 
             // Knight checks
-            int knightDY = isSente ? 2 : -2;
+            int knightDY = isBlack ? 2 : -2;
             Point knightPos = new(target.Value.X + 1, target.Value.Y + knightDY);
             if (knightPos.X >= 0 && knightPos.Y >= 0 && knightPos.X < board.GetLength(0) && knightPos.Y < board.GetLength(1)
-                && board[knightPos.X, knightPos.Y] is Pieces.Knight && board[knightPos.X, knightPos.Y]!.IsSente != isSente)
+                && board[knightPos.X, knightPos.Y] is Pieces.Knight && board[knightPos.X, knightPos.Y]!.IsBlack != isBlack)
             {
                 return true;
             }
             knightPos = new(target.Value.X - 1, target.Value.Y + knightDY);
             if (knightPos.X >= 0 && knightPos.Y >= 0 && knightPos.X < board.GetLength(0) && knightPos.Y < board.GetLength(1)
-                && board[knightPos.X, knightPos.Y] is Pieces.Knight && board[knightPos.X, knightPos.Y]!.IsSente != isSente)
+                && board[knightPos.X, knightPos.Y] is Pieces.Knight && board[knightPos.X, knightPos.Y]!.IsBlack != isBlack)
             {
                 return true;
             }
 
             // Pawn checks
-            int pawnYDiff = isSente ? 1 : -1;
+            int pawnYDiff = isBlack ? 1 : -1;
             int newY = target.Value.Y + pawnYDiff;
             if (newY < board.GetLength(1) && newY >= 0)
             {
-                if (board[target.Value.X, newY] is Pieces.Pawn && board[target.Value.X, newY]!.IsSente != isSente)
+                if (board[target.Value.X, newY] is Pieces.Pawn && board[target.Value.X, newY]!.IsBlack != isBlack)
                 {
                     return true;
                 }
@@ -196,26 +196,26 @@ namespace Go
         /// <remarks>
         /// This method will not detect states that depend on game history, such as repetition
         /// </remarks>
-        public static GameState DetermineGameState(Pieces.Piece?[,] board, bool currentTurnSente,
-            Point? senteKingPos = null, Point? goteKingPos = null)
+        public static GameState DetermineGameState(Pieces.Piece?[,] board, bool currentTurnBlack,
+            Point? blackKingPos = null, Point? whiteKingPos = null)
         {
-            IEnumerable<Pieces.Piece> sentePieces = board.OfType<Pieces.Piece>().Where(p => p.IsSente);
-            IEnumerable<Pieces.Piece> gotePieces = board.OfType<Pieces.Piece>().Where(p => !p.IsSente);
+            IEnumerable<Pieces.Piece> blackPieces = board.OfType<Pieces.Piece>().Where(p => p.IsBlack);
+            IEnumerable<Pieces.Piece> whitePieces = board.OfType<Pieces.Piece>().Where(p => !p.IsBlack);
 
-            bool senteCheck = IsKingReachable(board, true, senteKingPos ?? null);
-            // Sente and Gote cannot both be in check
-            bool goteCheck = !senteCheck && IsKingReachable(board, false, goteKingPos ?? null);
+            bool blackCheck = IsKingReachable(board, true, blackKingPos ?? null);
+            // Black and White cannot both be in check
+            bool whiteCheck = !blackCheck && IsKingReachable(board, false, whiteKingPos ?? null);
 
-            if (currentTurnSente && !sentePieces.SelectMany(p => p.GetValidMoves(board, true)).Any())
+            if (currentTurnBlack && !blackPieces.SelectMany(p => p.GetValidMoves(board, true)).Any())
             {
-                return senteCheck ? GameState.CheckMateSente : GameState.StalemateSente;
+                return blackCheck ? GameState.CheckMateBlack : GameState.StalemateBlack;
             }
-            if (!currentTurnSente && !gotePieces.SelectMany(p => p.GetValidMoves(board, true)).Any())
+            if (!currentTurnBlack && !whitePieces.SelectMany(p => p.GetValidMoves(board, true)).Any())
             {
-                return goteCheck ? GameState.CheckMateGote : GameState.StalemateGote;
+                return whiteCheck ? GameState.CheckMateWhite : GameState.StalemateWhite;
             }
 
-            return senteCheck ? GameState.CheckSente : goteCheck ? GameState.CheckGote : GameState.StandardPlay;
+            return blackCheck ? GameState.CheckBlack : whiteCheck ? GameState.CheckWhite : GameState.StandardPlay;
         }
 
         /// <summary>
@@ -223,20 +223,20 @@ namespace Go
         /// </summary>
         /// <returns>
         /// A <see cref="double"/> representing the total piece value of the game.
-        /// Positive means sente has stronger material, negative means gote does.
+        /// Positive means black has stronger material, negative means white does.
         /// </returns>
         public static double CalculateGameValue(GoGame game)
         {
             double inHandTotal = 0;
-            foreach ((Type dropType, int count) in game.SentePieceDrops)
+            foreach ((Type dropType, int count) in game.BlackPieceDrops)
             {
                 inHandTotal += count * Pieces.Piece.DefaultPieces[dropType].Value;
             }
-            foreach ((Type dropType, int count) in game.GotePieceDrops)
+            foreach ((Type dropType, int count) in game.WhitePieceDrops)
             {
                 inHandTotal -= count * Pieces.Piece.DefaultPieces[dropType].Value;
             }
-            return inHandTotal + game.Board.OfType<Pieces.Piece>().Sum(p => p.IsSente ? p.Value : -p.Value);
+            return inHandTotal + game.Board.OfType<Pieces.Piece>().Sum(p => p.IsBlack ? p.Value : -p.Value);
         }
 
         public readonly struct PossibleMove
@@ -244,24 +244,24 @@ namespace Go
             public Point Source { get; }
             public Point Destination { get; }
             public double EvaluatedFutureValue { get; }
-            public bool SenteMateLocated { get; }
-            public bool GoteMateLocated { get; }
-            public int DepthToSenteMate { get; }
-            public int DepthToGoteMate { get; }
+            public bool BlackMateLocated { get; }
+            public bool WhiteMateLocated { get; }
+            public int DepthToBlackMate { get; }
+            public int DepthToWhiteMate { get; }
             public bool DoPromotion { get; }
             public List<(Point, Point, bool)> BestLine { get;  }
 
             public PossibleMove(Point source, Point destination, double evaluatedFutureValue,
-                bool senteMateLocated, bool goteMateLocated, int depthToSenteMate, int depthToGoteMate,
+                bool blackMateLocated, bool whiteMateLocated, int depthToBlackMate, int depthToWhiteMate,
                 bool doPromotion, List<(Point, Point, bool)> bestLine)
             {
                 Source = source;
                 Destination = destination;
                 EvaluatedFutureValue = evaluatedFutureValue;
-                SenteMateLocated = senteMateLocated;
-                GoteMateLocated = goteMateLocated;
-                DepthToSenteMate = depthToSenteMate;
-                DepthToGoteMate = depthToGoteMate;
+                BlackMateLocated = blackMateLocated;
+                WhiteMateLocated = whiteMateLocated;
+                DepthToBlackMate = depthToBlackMate;
+                DepthToWhiteMate = depthToWhiteMate;
                 DoPromotion = doPromotion;
                 BestLine = bestLine;
             }
@@ -275,16 +275,16 @@ namespace Go
         {
             PossibleMove[] moves = await EvaluatePossibleMoves(game, maxDepth, cancellationToken);
             PossibleMove bestMove = new(default, default,
-                game.CurrentTurnSente ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
+                game.CurrentTurnBlack ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
             foreach (PossibleMove potentialMove in moves)
             {
-                if (game.CurrentTurnSente)
+                if (game.CurrentTurnBlack)
                 {
                     if (bestMove.EvaluatedFutureValue == double.NegativeInfinity
-                        || (!bestMove.GoteMateLocated && potentialMove.GoteMateLocated)
-                        || (!bestMove.GoteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
-                        || (bestMove.GoteMateLocated && potentialMove.GoteMateLocated
-                            && potentialMove.DepthToGoteMate < bestMove.DepthToGoteMate))
+                        || (!bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated)
+                        || (!bestMove.WhiteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
+                        || (bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated
+                            && potentialMove.DepthToWhiteMate < bestMove.DepthToWhiteMate))
                     {
                         bestMove = potentialMove;
                     }
@@ -292,10 +292,10 @@ namespace Go
                 else
                 {
                     if (bestMove.EvaluatedFutureValue == double.PositiveInfinity
-                        || (!bestMove.SenteMateLocated && potentialMove.SenteMateLocated)
-                        || (!bestMove.SenteMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
-                        || (bestMove.SenteMateLocated && potentialMove.SenteMateLocated
-                            && potentialMove.DepthToSenteMate < bestMove.DepthToSenteMate))
+                        || (!bestMove.BlackMateLocated && potentialMove.BlackMateLocated)
+                        || (!bestMove.BlackMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
+                        || (bestMove.BlackMateLocated && potentialMove.BlackMateLocated
+                            && potentialMove.DepthToBlackMate < bestMove.DepthToBlackMate))
                     {
                         bestMove = potentialMove;
                     }
@@ -322,7 +322,7 @@ namespace Go
             {
                 if (piece is not null)
                 {
-                    if (piece.IsSente != game.CurrentTurnSente)
+                    if (piece.IsBlack != game.CurrentTurnBlack)
                     {
                         continue;
                     }
@@ -330,8 +330,8 @@ namespace Go
                     foreach (Point validMove in GetValidMovesForEval(game, piece))
                     {
                         if (Pieces.Piece.PromotionMap.ContainsKey(piece.GetType())
-                            && ((piece.IsSente ? validMove.Y >= game.PromotionZoneSenteStart : validMove.Y <= game.PromotionZoneGoteStart)
-                                || (piece.IsSente ? piece.Position.Y >= game.PromotionZoneSenteStart : piece.Position.Y <= game.PromotionZoneGoteStart)))
+                            && ((piece.IsBlack ? validMove.Y >= game.PromotionZoneBlackStart : validMove.Y <= game.PromotionZoneWhiteStart)
+                                || (piece.IsBlack ? piece.Position.Y >= game.PromotionZoneBlackStart : piece.Position.Y <= game.PromotionZoneWhiteStart)))
                         {
                             remainingThreads++;
                             Point promotionPosition = piece.Position;
@@ -349,15 +349,15 @@ namespace Go
                                 if (bestSubMove.Source != bestSubMove.Destination)
                                 {
                                     possibleMoves.Add(new PossibleMove(promotionPosition, promotionMove, bestSubMove.EvaluatedFutureValue,
-                                        bestSubMove.SenteMateLocated, bestSubMove.GoteMateLocated,
-                                        bestSubMove.DepthToSenteMate, bestSubMove.DepthToGoteMate, true, bestSubMove.BestLine));
+                                        bestSubMove.BlackMateLocated, bestSubMove.WhiteMateLocated,
+                                        bestSubMove.DepthToBlackMate, bestSubMove.DepthToWhiteMate, true, bestSubMove.BestLine));
                                 }
                                 remainingThreads--;
                             });
                             promotionThread.Start();
                         }
-                        if ((piece is not Pieces.Pawn and not Pieces.Lance || validMove.Y != (piece.IsSente ? game.Board.GetLength(1) - 1 : 0))
-                            && (piece is not Pieces.Knight || !(piece.IsSente ? validMove.Y >= game.Board.GetLength(1) - 2 : validMove.Y <= 1)))
+                        if ((piece is not Pieces.Pawn and not Pieces.Lance || validMove.Y != (piece.IsBlack ? game.Board.GetLength(1) - 1 : 0))
+                            && (piece is not Pieces.Knight || !(piece.IsBlack ? validMove.Y >= game.Board.GetLength(1) - 2 : validMove.Y <= 1)))
                         {
                             remainingThreads++;
                             Point thisPosition = piece.Position;
@@ -375,8 +375,8 @@ namespace Go
                                 if (bestSubMove.Source != bestSubMove.Destination)
                                 {
                                     possibleMoves.Add(new PossibleMove(thisPosition, thisValidMove, bestSubMove.EvaluatedFutureValue,
-                                        bestSubMove.SenteMateLocated, bestSubMove.GoteMateLocated,
-                                        bestSubMove.DepthToSenteMate, bestSubMove.DepthToGoteMate, false, bestSubMove.BestLine));
+                                        bestSubMove.BlackMateLocated, bestSubMove.WhiteMateLocated,
+                                        bestSubMove.DepthToBlackMate, bestSubMove.DepthToWhiteMate, false, bestSubMove.BestLine));
                                 }
                                 remainingThreads--;
                             });
@@ -386,7 +386,7 @@ namespace Go
                 }
             }
 
-            Dictionary<Type, int> dropCounts = game.CurrentTurnSente ? game.SentePieceDrops : game.GotePieceDrops;
+            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackPieceDrops : game.WhitePieceDrops;
             foreach ((Type dropType, int count) in dropCounts)
             {
                 if (count > 0)
@@ -414,8 +414,8 @@ namespace Go
                                     if (bestSubMove.Source != bestSubMove.Destination)
                                     {
                                         possibleMoves.Add(new PossibleMove(thisDropSource, pt,
-                                            bestSubMove.EvaluatedFutureValue, bestSubMove.SenteMateLocated, bestSubMove.GoteMateLocated,
-                                            bestSubMove.DepthToSenteMate, bestSubMove.DepthToGoteMate, false, bestSubMove.BestLine));
+                                            bestSubMove.EvaluatedFutureValue, bestSubMove.BlackMateLocated, bestSubMove.WhiteMateLocated,
+                                            bestSubMove.DepthToBlackMate, bestSubMove.DepthToWhiteMate, false, bestSubMove.BestLine));
                                     }
                                     remainingThreads--;
                                 });
@@ -453,12 +453,12 @@ namespace Go
             if (game.GameOver)
             {
                 GameState state = game.DetermineGameState();
-                if (state is GameState.CheckMateSente or GameState.PerpetualCheckGote or GameState.StalemateSente)
+                if (state is GameState.CheckMateBlack or GameState.PerpetualCheckWhite or GameState.StalemateBlack)
                 {
                     return new PossibleMove(lastMoveSrc, lastMoveDst, double.NegativeInfinity, true, false, depth, 0, false,
                         currentLine);
                 }
-                else if (state is GameState.CheckMateGote or GameState.PerpetualCheckSente or GameState.StalemateGote)
+                else if (state is GameState.CheckMateWhite or GameState.PerpetualCheckBlack or GameState.StalemateWhite)
                 {
                     return new PossibleMove(lastMoveSrc, lastMoveDst, double.PositiveInfinity, false, true, 0, depth, false,
                         currentLine);
@@ -475,13 +475,13 @@ namespace Go
             }
 
             PossibleMove bestMove = new(default, default,
-                game.CurrentTurnSente ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
+                game.CurrentTurnBlack ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
 
             foreach (Pieces.Piece? piece in game.Board)
             {
                 if (piece is not null)
                 {
-                    if (piece.IsSente != game.CurrentTurnSente)
+                    if (piece.IsBlack != game.CurrentTurnBlack)
                     {
                         continue;
                     }
@@ -490,7 +490,7 @@ namespace Go
                     {
                         List<bool> availablePromotions = new(2);
                         if (Pieces.Piece.PromotionMap.ContainsKey(piece.GetType())
-                            && piece.IsSente ? validMove.Y >= game.PromotionZoneSenteStart : validMove.Y <= game.PromotionZoneGoteStart)
+                            && piece.IsBlack ? validMove.Y >= game.PromotionZoneBlackStart : validMove.Y <= game.PromotionZoneWhiteStart)
                         {
                             availablePromotions.Add(true);
                         }
@@ -510,19 +510,19 @@ namespace Go
                             {
                                 return bestMove;
                             }
-                            if (game.CurrentTurnSente)
+                            if (game.CurrentTurnBlack)
                             {
                                 if (bestMove.EvaluatedFutureValue == double.NegativeInfinity
-                                    || (!bestMove.GoteMateLocated && potentialMove.GoteMateLocated)
-                                    || (!bestMove.GoteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
-                                    || (bestMove.GoteMateLocated && potentialMove.GoteMateLocated
-                                        && potentialMove.DepthToGoteMate < bestMove.DepthToGoteMate))
+                                    || (!bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated)
+                                    || (!bestMove.WhiteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
+                                    || (bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated
+                                        && potentialMove.DepthToWhiteMate < bestMove.DepthToWhiteMate))
                                 {
                                     bestMove = new PossibleMove(piece.Position, validMove, potentialMove.EvaluatedFutureValue,
-                                        potentialMove.SenteMateLocated, potentialMove.GoteMateLocated,
-                                        potentialMove.DepthToSenteMate, potentialMove.DepthToGoteMate, potentialMove.DoPromotion, potentialMove.BestLine);
+                                        potentialMove.BlackMateLocated, potentialMove.WhiteMateLocated,
+                                        potentialMove.DepthToBlackMate, potentialMove.DepthToWhiteMate, potentialMove.DoPromotion, potentialMove.BestLine);
                                 }
-                                if (potentialMove.EvaluatedFutureValue >= beta && !bestMove.GoteMateLocated)
+                                if (potentialMove.EvaluatedFutureValue >= beta && !bestMove.WhiteMateLocated)
                                 {
                                     return bestMove;
                                 }
@@ -534,16 +534,16 @@ namespace Go
                             else
                             {
                                 if (bestMove.EvaluatedFutureValue == double.PositiveInfinity
-                                    || (!bestMove.SenteMateLocated && potentialMove.SenteMateLocated)
-                                    || (!bestMove.SenteMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
-                                    || (bestMove.SenteMateLocated && potentialMove.SenteMateLocated
-                                        && potentialMove.DepthToSenteMate < bestMove.DepthToSenteMate))
+                                    || (!bestMove.BlackMateLocated && potentialMove.BlackMateLocated)
+                                    || (!bestMove.BlackMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
+                                    || (bestMove.BlackMateLocated && potentialMove.BlackMateLocated
+                                        && potentialMove.DepthToBlackMate < bestMove.DepthToBlackMate))
                                 {
                                     bestMove = new PossibleMove(piece.Position, validMove, potentialMove.EvaluatedFutureValue,
-                                        potentialMove.SenteMateLocated, potentialMove.GoteMateLocated,
-                                        potentialMove.DepthToSenteMate, potentialMove.DepthToGoteMate, potentialMove.DoPromotion, potentialMove.BestLine);
+                                        potentialMove.BlackMateLocated, potentialMove.WhiteMateLocated,
+                                        potentialMove.DepthToBlackMate, potentialMove.DepthToWhiteMate, potentialMove.DoPromotion, potentialMove.BestLine);
                                 }
-                                if (potentialMove.EvaluatedFutureValue <= alpha && !bestMove.SenteMateLocated)
+                                if (potentialMove.EvaluatedFutureValue <= alpha && !bestMove.BlackMateLocated)
                                 {
                                     return bestMove;
                                 }
@@ -557,7 +557,7 @@ namespace Go
                 }
             }
 
-            Dictionary<Type, int> dropCounts = game.CurrentTurnSente ? game.SentePieceDrops : game.GotePieceDrops;
+            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackPieceDrops : game.WhitePieceDrops;
             foreach ((Type dropType, int count) in dropCounts)
             {
                 if (count > 0)
@@ -580,19 +580,19 @@ namespace Go
                                 {
                                     return bestMove;
                                 }
-                                if (game.CurrentTurnSente)
+                                if (game.CurrentTurnBlack)
                                 {
                                     if (bestMove.EvaluatedFutureValue == double.NegativeInfinity
-                                        || (!bestMove.GoteMateLocated && potentialMove.GoteMateLocated)
-                                        || (!bestMove.GoteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
-                                        || (bestMove.GoteMateLocated && potentialMove.GoteMateLocated
-                                            && potentialMove.DepthToGoteMate < bestMove.DepthToGoteMate))
+                                        || (!bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated)
+                                        || (!bestMove.WhiteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
+                                        || (bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated
+                                            && potentialMove.DepthToWhiteMate < bestMove.DepthToWhiteMate))
                                     {
                                         bestMove = new PossibleMove(dropSource, dropPoint, potentialMove.EvaluatedFutureValue,
-                                            potentialMove.SenteMateLocated, potentialMove.GoteMateLocated,
-                                            potentialMove.DepthToSenteMate, potentialMove.DepthToGoteMate, potentialMove.DoPromotion, potentialMove.BestLine);
+                                            potentialMove.BlackMateLocated, potentialMove.WhiteMateLocated,
+                                            potentialMove.DepthToBlackMate, potentialMove.DepthToWhiteMate, potentialMove.DoPromotion, potentialMove.BestLine);
                                     }
-                                    if (potentialMove.EvaluatedFutureValue >= beta && !bestMove.GoteMateLocated)
+                                    if (potentialMove.EvaluatedFutureValue >= beta && !bestMove.WhiteMateLocated)
                                     {
                                         return bestMove;
                                     }
@@ -604,16 +604,16 @@ namespace Go
                                 else
                                 {
                                     if (bestMove.EvaluatedFutureValue == double.PositiveInfinity
-                                        || (!bestMove.SenteMateLocated && potentialMove.SenteMateLocated)
-                                        || (!bestMove.SenteMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
-                                        || (bestMove.SenteMateLocated && potentialMove.SenteMateLocated
-                                            && potentialMove.DepthToSenteMate < bestMove.DepthToSenteMate))
+                                        || (!bestMove.BlackMateLocated && potentialMove.BlackMateLocated)
+                                        || (!bestMove.BlackMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
+                                        || (bestMove.BlackMateLocated && potentialMove.BlackMateLocated
+                                            && potentialMove.DepthToBlackMate < bestMove.DepthToBlackMate))
                                     {
                                         bestMove = new PossibleMove(dropSource, dropPoint, potentialMove.EvaluatedFutureValue,
-                                            potentialMove.SenteMateLocated, potentialMove.GoteMateLocated,
-                                            potentialMove.DepthToSenteMate, potentialMove.DepthToGoteMate, potentialMove.DoPromotion, potentialMove.BestLine);
+                                            potentialMove.BlackMateLocated, potentialMove.WhiteMateLocated,
+                                            potentialMove.DepthToBlackMate, potentialMove.DepthToWhiteMate, potentialMove.DoPromotion, potentialMove.BestLine);
                                     }
-                                    if (potentialMove.EvaluatedFutureValue <= alpha && !bestMove.SenteMateLocated)
+                                    if (potentialMove.EvaluatedFutureValue <= alpha && !bestMove.BlackMateLocated)
                                     {
                                         return bestMove;
                                     }
