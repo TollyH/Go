@@ -4,20 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Go"
-        xmlns:pieces="clr-namespace:Go.Pieces"
         mc:Ignorable="d"
-        Title="Custom Game Setup" Width="720" Height="660" MouseUp="Window_MouseUp" Loaded="Window_Loaded" WindowStyle="ToolWindow" SizeChanged="Window_SizeChanged">
+        Title="Custom Game Setup" Width="720" Height="525" MouseUp="Window_MouseUp" Loaded="Window_Loaded" WindowStyle="ToolWindow" SizeChanged="Window_SizeChanged">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="75px"/>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="75px"/>
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="210px"/>
         </Grid.ColumnDefinitions>
-        <Grid Grid.Row="1">
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="12*"/>
@@ -28,196 +22,16 @@
                 <RowDefinition Height="12*"/>
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
-            <DockPanel x:Name="filesTop" Grid.Column="1" Grid.Row="0">
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=goBoardBackground}">
-                    <Label Content="９"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=goBoardBackground}">
-                    <Label Content="８"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=goBoardBackground}">
-                    <Label Content="７"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=goBoardBackground}">
-                    <Label Content="６"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}">
-                    <Label Content="５"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}">
-                    <Label Content="４"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}">
-                    <Label Content="３"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}">
-                    <Label Content="２"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}">
-                    <Label Content="１"/>
-                </Viewbox>
-            </DockPanel>
-            <DockPanel x:Name="ranksLeft" Grid.Column="0" Grid.Row="1">
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="一"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="二"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="三"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="四"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="五"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="六" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="七" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="八" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="九" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-            </DockPanel>
-            <DockPanel x:Name="filesBottom" Grid.Column="1" Grid.Row="2">
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="1"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="２"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="３"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="４"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="５"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="６" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="７" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="８" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Width="{Binding ActualWidth, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Right">
-                    <Label Content="９" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-            </DockPanel>
-            <DockPanel x:Name="ranksRight" Grid.Column="2" Grid.Row="1">
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="一"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="二"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="三"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="四"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="五"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="六" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="七" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="八" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-                <Viewbox Height="{Binding ActualHeight, ElementName=sizeReference, Mode=OneWay}" DockPanel.Dock="Top">
-                    <Label Content="九" Visibility="{Binding Visibility, ElementName=goBoardBackground}"/>
-                </Viewbox>
-            </DockPanel>
             <Border Grid.Column="1" Grid.Row="1" BorderBrush="Black" BorderThickness="1">
                 <Grid>
                     <Grid x:Name="goBoardBackground" Background="#FFF9B853">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                        </Grid.ColumnDefinitions>
-                        <Rectangle x:Name="sizeReference" Grid.Column="0" Grid.Row="0" Opacity="0"/>
-                        <Ellipse Grid.Column="2" Grid.Row="2" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Ellipse Grid.Column="5" Grid.Row="2" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Ellipse Grid.Column="5" Grid.Row="5" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Ellipse Grid.Column="2" Grid.Row="5" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="0" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="1" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="2" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="3" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="4" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="5" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="6" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="9" Grid.Column="7" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="0" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="1" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="2" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="3" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="4" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="5" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="6" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="9" Grid.Row="7" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                    </Grid>
-                    <Grid x:Name="miniGoBoardBackground" Background="#FFF9B853">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                            <RowDefinition Height="1*"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
-                        </Grid.ColumnDefinitions>
-                        <Ellipse Grid.Column="0" Grid.Row="0" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Ellipse Grid.Column="3" Grid.Row="0" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Ellipse Grid.Column="3" Grid.Row="3" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Ellipse Grid.Column="0" Grid.Row="3" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6"/>
-                        <Rectangle Grid.RowSpan="5" Grid.Column="0" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="5" Grid.Column="1" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="5" Grid.Column="2" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.RowSpan="5" Grid.Column="3" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2"/>
-                        <Rectangle Grid.ColumnSpan="5" Grid.Row="0" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="5" Grid.Row="1" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="5" Grid.Row="2" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
-                        <Rectangle Grid.ColumnSpan="5" Grid.Row="3" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1"/>
+                        <Ellipse x:Name="boardCenterDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                        <Ellipse x:Name="boardLeftUpperDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                        <Ellipse x:Name="boardLeftLowerDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                        <Ellipse x:Name="boardRightUpperDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                        <Ellipse x:Name="boardRightLowerDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                        <Rectangle x:Name="boardTemplateLineVertical" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2" Visibility="Collapsed"/>
+                        <Rectangle x:Name="boardTemplateLineHorizontal" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1" Visibility="Collapsed"/>
                     </Grid>
                 </Grid>
             </Border>
@@ -225,22 +39,8 @@
         </Grid>
         <Border Grid.Column="1" Grid.RowSpan="3" BorderBrush="Black" BorderThickness="1,0,0,0">
             <StackPanel>
-                <Label Content="Piece Selection (Click on Board)" Margin="5,5,5,1" Padding="0,0,0,0" FontSize="14"/>
+                <Label Content="Click on Board to Place Piece" Margin="5,5,5,1" Padding="0,0,0,0" FontSize="14"/>
                 <Label Content="Left Click = Black, Right Click = White" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
-                <RadioButton x:Name="pieceSelectKing" Margin="5,2,5,2" Content="King" GroupName="Piece" IsChecked="True"/>
-                <RadioButton x:Name="pieceSelectGoldGeneral" Margin="5,2,5,2" Content="Gold General" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectSilverGeneral" Margin="5,2,5,2" Content="Silver General" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectPromotedSilverGeneral" Margin="5,2,5,2" Content="Promoted Silver General" GroupName="Piece" Foreground="Red"/>
-                <RadioButton x:Name="pieceSelectRook" Margin="5,2,5,2" Content="Rook" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectPromotedRook" Margin="5,2,5,2" Content="Promoted Rook" GroupName="Piece" Foreground="Red"/>
-                <RadioButton x:Name="pieceSelectBishop" Margin="5,2,5,2" Content="Bishop" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectPromotedBishop" Margin="5,2,5,2" Content="Promoted Bishop" GroupName="Piece" Foreground="Red"/>
-                <RadioButton x:Name="pieceSelectKnight" Margin="5,2,5,2" Content="Knight" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectPromotedKnight" Margin="5,2,5,2" Content="Promoted Knight" GroupName="Piece" Foreground="Red"/>
-                <RadioButton x:Name="pieceSelectLance" Margin="5,2,5,2" Content="Lance" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectPromotedLance" Margin="5,2,5,2" Content="Promoted Lance" GroupName="Piece" Foreground="Red"/>
-                <RadioButton x:Name="pieceSelectPawn" Margin="5,2,5,2" Content="Pawn" GroupName="Piece"/>
-                <RadioButton x:Name="pieceSelectPromotedPawn" Margin="5,2,5,5" Content="Promoted Pawn" GroupName="Piece" Foreground="Red"/>
                 <Separator/>
                 <Label Content="Current Turn" Margin="5" Padding="0,0,0,0" FontSize="14"/>
                 <Grid>
@@ -255,70 +55,6 @@
         </Border>
         <Button x:Name="startButton" Content="Start" Grid.Column="1" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="7" Width="50" IsEnabled="False" Click="startButton_Click"/>
         <Button x:Name="importButton" Content="Load SFEN" Grid.Column="1" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
-        <Border x:Name="whiteDropsContainer" Grid.Row="0" Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,0,1" ScrollViewer.HorizontalScrollBarVisibility="Auto" ToolTip="Left Click = Increment, Right Click = Decrement">
-            <StackPanel x:Name="whiteDropsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid x:Name="whiteGoldGeneralDrop" Tag="{x:Type pieces:GoldGeneral}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Gold General.png" Tag="Gold General"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="whiteSilverGeneralDrop" Tag="{x:Type pieces:SilverGeneral}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Silver General.png" Tag="Silver General"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="whiteRookDrop" Tag="{x:Type pieces:Rook}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Rook.png" Tag="Rook"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="whiteBishopDrop" Tag="{x:Type pieces:Bishop}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Bishop.png" Tag="Bishop"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="whiteKnightDrop" Tag="{x:Type pieces:Knight}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Knight.png" Tag="Knight"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="whiteLanceDrop" Tag="{x:Type pieces:Lance}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Lance.png" Tag="Lance"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="whitePawnDrop" Tag="{x:Type pieces:Pawn}" MouseUp="WhiteDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/White/Pawn.png" Tag="Pawn"/>
-                    <Label Content="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-            </StackPanel>
-        </Border>
-        <Border x:Name="blackDropsContainer" Grid.Row="2" Grid.Column="0" BorderBrush="Black" BorderThickness="0,1,0,1" ScrollViewer.HorizontalScrollBarVisibility="Auto" ToolTip="Left Click = Increment, Right Click = Decrement">
-            <StackPanel x:Name="blackDropsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Grid x:Name="blackGoldGeneralDrop" Tag="{x:Type pieces:GoldGeneral}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Gold General.png" Tag="Gold General"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="blackSilverGeneralDrop" Tag="{x:Type pieces:SilverGeneral}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Silver General.png" Tag="Silver General"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="blackRookDrop" Tag="{x:Type pieces:Rook}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Rook.png" Tag="Rook"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="blackBishopDrop" Tag="{x:Type pieces:Bishop}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Bishop.png" Tag="Bishop"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="blackKnightDrop" Tag="{x:Type pieces:Knight}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Knight.png" Tag="Knight"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="blackLanceDrop" Tag="{x:Type pieces:Lance}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Lance.png" Tag="Lance"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-                <Grid x:Name="blackPawnDrop" Tag="{x:Type pieces:Pawn}" MouseUp="BlackDrop_MouseUp">
-                    <Image Source="/Pieces/1kanji/Black/Pawn.png" Tag="Pawn"/>
-                    <Label Content="0" VerticalAlignment="Top" HorizontalAlignment="Right" FontWeight="Bold" FontSize="15"/>
-                </Grid>
-            </StackPanel>
-        </Border>
         <Grid x:Name="importOverlay" Grid.ColumnSpan="2" Grid.RowSpan="3" Background="White" Visibility="Collapsed">
             <Label Content="Enter a Go Forsyth–Edwards Notation (SFEN) board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>
             <TextBox x:Name="sfenInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -"/>

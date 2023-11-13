@@ -8,7 +8,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace Go
@@ -21,14 +20,6 @@ namespace Go
         private GoGame game = new(false);
         private readonly Settings config;
 
-        private Pieces.Piece? grabbedPiece = null;
-        /// <summary>
-        /// <see langword="true"/> if the player has selected a piece but isn't dragging it, <see langword="false"/> otherwise
-        /// </summary>
-        private bool highlightGrabbedMoves = false;
-
-        private Type? selectedDropType = null;
-
         private HashSet<System.Drawing.Point> squareHighlights = new();
         private HashSet<(System.Drawing.Point, System.Drawing.Point)> lineHighlights = new();
         private System.Drawing.Point? mouseDownStartPoint = null;
@@ -38,8 +29,6 @@ namespace Go
 
         private BoardAnalysis.PossibleMove? currentBestMove = null;
         private bool manuallyEvaluating = false;
-
-        private readonly Dictionary<Pieces.Piece, Border> pieceViews = new();
 
         private CancellationTokenSource cancelMoveComputation = new();
 
@@ -56,104 +45,18 @@ namespace Go
             InitializeComponent();
 
             goBoardBackground.Background = new SolidColorBrush(config.BoardColor);
-            miniGoBoardBackground.Background = new SolidColorBrush(config.BoardColor);
             flipBoardItem.IsChecked = config.FlipBoard;
             updateEvalAfterBotItem.IsChecked = config.UpdateEvalAfterBot;
-            foreach (MenuItem item in pieceSetItem.Items)
-            {
-                item.IsChecked = config.PieceSet == (string)item.Tag;
-            }
-            foreach (MenuItem item in notationSetItem.Items)
-            {
-                item.IsChecked = config.Notation == (string)item.Tag;
-            }
         }
 
         public void UpdateGameDisplay()
         {
-            if (game.AwaitingPromotionResponse)
-            {
-                return;
-            }
             goGameCanvas.Children.Clear();
-            pieceViews.Clear();
-            goBoardBackground.Children.Remove(sizeReference);
-            miniGoBoardBackground.Children.Remove(sizeReference);
 
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
-            bool minigo = game.Board.GetLength(0) == 5;
 
             tileWidth = goGameCanvas.ActualWidth / game.Board.GetLength(0);
             tileHeight = goGameCanvas.ActualHeight / game.Board.GetLength(1);
-
-            foreach (Grid dropItem in blackDropsPanel.Children)
-            {
-                Type pieceType = (Type)dropItem.Tag;
-                int heldCount = game.BlackPieceDrops[pieceType];
-                dropItem.Opacity = heldCount == 0 ? 0.55 : 1;
-
-                SolidColorBrush dropBackground;
-                if (game.CurrentTurnBlack)
-                {
-                    if (currentBestMove is not null && currentBestMove.Value.Source.X == -1
-                        && GoGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
-                    {
-                        dropBackground = new SolidColorBrush(config.BestMoveSourceColor);
-                    }
-                    else if (selectedDropType == pieceType)
-                    {
-                        dropBackground = new SolidColorBrush(config.SelectedPieceColor);
-                    }
-                    else
-                    {
-                        dropBackground = Brushes.Transparent;
-                    }
-                }
-                else
-                {
-                    dropBackground = Brushes.Transparent;
-                }
-                dropItem.Background = dropBackground;
-
-                ((Label)dropItem.Children[1]).Content = heldCount;
-                ((Label)dropItem.Children[1]).VerticalAlignment = boardFlipped ? VerticalAlignment.Bottom : VerticalAlignment.Top;
-                ((Image)dropItem.Children[0]).Source = new BitmapImage(new Uri(
-                    $"pack://application:,,,/Pieces/{config.PieceSet}/{(boardFlipped ? "White" : "Black")}/{((Image)dropItem.Children[0]).Tag}.png"));
-            }
-            foreach (Grid dropItem in whiteDropsPanel.Children)
-            {
-                Type pieceType = (Type)dropItem.Tag;
-                int heldCount = game.WhitePieceDrops[pieceType];
-                dropItem.Opacity = heldCount == 0 ? 0.55 : 1;
-
-                SolidColorBrush dropBackground;
-                if (!game.CurrentTurnBlack)
-                {
-                    if (currentBestMove is not null && currentBestMove.Value.Source.X == -1
-                        && GoGame.DropTypeOrder[currentBestMove.Value.Source.Y] == pieceType)
-                    {
-                        dropBackground = new SolidColorBrush(config.BestMoveSourceColor);
-                    }
-                    else if (selectedDropType == pieceType)
-                    {
-                        dropBackground = new SolidColorBrush(config.SelectedPieceColor);
-                    }
-                    else
-                    {
-                        dropBackground = Brushes.Transparent;
-                    }
-                }
-                else
-                {
-                    dropBackground = Brushes.Transparent;
-                }
-                dropItem.Background = dropBackground;
-
-                ((Label)dropItem.Children[1]).Content = heldCount;
-                ((Label)dropItem.Children[1]).VerticalAlignment = boardFlipped ? VerticalAlignment.Top : VerticalAlignment.Bottom;
-                ((Image)dropItem.Children[0]).Source = new BitmapImage(new Uri(
-                    $"pack://application:,,,/Pieces/{config.PieceSet}/{(boardFlipped ? "Black" : "White")}/{((Image)dropItem.Children[0]).Tag}.png"));
-            }
 
             if (currentBestMove is null && !manuallyEvaluating)
             {
@@ -173,26 +76,6 @@ namespace Go
                 Grid.SetRow(blackEvaluationView, 0);
                 Grid.SetColumn(whiteEvaluationView, 0);
                 Grid.SetRow(whiteEvaluationView, 2);
-
-                Grid.SetRow(blackDropsContainer, 1);
-                Grid.SetRow(whiteDropsContainer, 3);
-
-                foreach (UIElement child in ranksLeft.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Bottom);
-                }
-                foreach (UIElement child in ranksRight.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Bottom);
-                }
-                foreach (UIElement child in filesTop.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Right);
-                }
-                foreach (UIElement child in filesBottom.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Left);
-                }
             }
             else
             {
@@ -200,48 +83,12 @@ namespace Go
                 Grid.SetRow(blackEvaluationView, 2);
                 Grid.SetColumn(whiteEvaluationView, 2);
                 Grid.SetRow(whiteEvaluationView, 0);
-
-                Grid.SetRow(blackDropsContainer, 3);
-                Grid.SetRow(whiteDropsContainer, 1);
-
-                foreach (UIElement child in ranksLeft.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Top);
-                }
-                foreach (UIElement child in ranksRight.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Top);
-                }
-                foreach (UIElement child in filesTop.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Left);
-                }
-                foreach (UIElement child in filesBottom.Children)
-                {
-                    DockPanel.SetDock(child, Dock.Right);
-                }
-            }
-
-            if (minigo)
-            {
-                goBoardBackground.Visibility = Visibility.Collapsed;
-                miniGoBoardBackground.Visibility = Visibility.Visible;
-                _ = miniGoBoardBackground.Children.Add(sizeReference);
-            }
-            else
-            {
-                goBoardBackground.Visibility = Visibility.Visible;
-                miniGoBoardBackground.Visibility = Visibility.Collapsed;
-                _ = goBoardBackground.Children.Add(sizeReference);
             }
 
             movesPanel.Children.Clear();
-            List<string> moves = config.Notation == "western"
-                ? game.WesternMoveText
-                : game.JapaneseMoveText;
-            for (int i = 0; i < moves.Count; i++)
+            for (int i = 0; i < game.WesternMoveText.Count; i++)
             {
-                string text = $"{i + 1}. {moves[i]}";
+                string text = $"{i + 1}. {game.WesternMoveText[i]}";
                 _ = movesPanel.Children.Add(new Label()
                 {
                     Content = text,
@@ -249,41 +96,15 @@ namespace Go
                 });
             }
 
-            GameState state = game.DetermineGameState();
-
             int boardMaxY = game.Board.GetLength(1) - 1;
             int boardMaxX = game.Board.GetLength(0) - 1;
 
-            if (state is GameState.CheckMateBlack or GameState.CheckMateWhite)
-            {
-                System.Drawing.Point kingPosition = state == GameState.CheckMateBlack ? game.BlackKing.Position : game.WhiteKing.Position;
-                Rectangle mateHighlight = new()
-                {
-                    Width = tileWidth,
-                    Height = tileHeight,
-                    Fill = new SolidColorBrush(config.CheckMateHighlightColor)
-                };
-                _ = goGameCanvas.Children.Add(mateHighlight);
-                Canvas.SetBottom(mateHighlight, (boardFlipped ? boardMaxY - kingPosition.Y : kingPosition.Y) * tileHeight);
-                Canvas.SetLeft(mateHighlight, (boardFlipped ? boardMaxX - kingPosition.X : kingPosition.X) * tileWidth);
-            }
+            // TODO: Upon game over, show who surrounded territory belongs to with smaller dots
 
+            // TODO: No source and destination now, just destination
             if (game.Moves.Count > 0)
             {
                 (_, System.Drawing.Point lastMoveSource, System.Drawing.Point lastMoveDestination, _, _) = game.Moves[^1];
-
-                if (lastMoveSource.X != -1)
-                {
-                    Rectangle sourceMoveHighlight = new()
-                    {
-                        Width = tileWidth,
-                        Height = tileHeight,
-                        Fill = new SolidColorBrush(config.LastMoveSourceColor)
-                    };
-                    _ = goGameCanvas.Children.Add(sourceMoveHighlight);
-                    Canvas.SetBottom(sourceMoveHighlight, (boardFlipped ? boardMaxY - lastMoveSource.Y : lastMoveSource.Y) * tileHeight);
-                    Canvas.SetLeft(sourceMoveHighlight, (boardFlipped ? boardMaxX - lastMoveSource.X : lastMoveSource.X) * tileWidth);
-                }
 
                 Rectangle destinationMoveHighlight = new()
                 {
@@ -297,25 +118,11 @@ namespace Go
 
             }
 
+            // TODO: No source and destination now, just destination
             if (currentBestMove is not null
                 // Prevent cases where there are no valid moves highlighting (0, 0)
                 && currentBestMove.Value.Source != currentBestMove.Value.Destination)
             {
-                if (currentBestMove.Value.Source.X != -1)
-                {
-                    Rectangle bestMoveSrcHighlight = new()
-                    {
-                        Width = tileWidth,
-                        Height = tileHeight,
-                        Fill = new SolidColorBrush(config.BestMoveSourceColor)
-                    };
-                    _ = goGameCanvas.Children.Add(bestMoveSrcHighlight);
-                    Canvas.SetBottom(bestMoveSrcHighlight,
-                        (boardFlipped ? boardMaxY - currentBestMove.Value.Source.Y : currentBestMove.Value.Source.Y) * tileHeight);
-                    Canvas.SetLeft(bestMoveSrcHighlight,
-                        (boardFlipped ? boardMaxX - currentBestMove.Value.Source.X : currentBestMove.Value.Source.X) * tileWidth);
-                }
-
                 Rectangle bestMoveDstHighlight = new()
                 {
                     Width = tileWidth,
@@ -329,84 +136,23 @@ namespace Go
                     (boardFlipped ? boardMaxX - currentBestMove.Value.Destination.X : currentBestMove.Value.Destination.X) * tileWidth);
             }
 
-            if (grabbedPiece is not null && highlightGrabbedMoves)
-            {
-                foreach (System.Drawing.Point validMove in grabbedPiece.GetValidMoves(game.Board, true))
-                {
-                    Brush fillBrush;
-                    if (game.Board[validMove.X, validMove.Y] is not null)
-                    {
-                        fillBrush = new SolidColorBrush(config.AvailableCaptureColor);
-                    }
-                    else
-                    {
-                        fillBrush = new SolidColorBrush(config.AvailableMoveColor);
-                    }
-
-                    Rectangle newRect = new()
-                    {
-                        Width = tileWidth,
-                        Height = tileHeight,
-                        Fill = fillBrush
-                    };
-                    _ = goGameCanvas.Children.Add(newRect);
-                    Canvas.SetBottom(newRect, (boardFlipped ? boardMaxY - validMove.Y : validMove.Y) * tileHeight);
-                    Canvas.SetLeft(newRect, (boardFlipped ? boardMaxX - validMove.X : validMove.X) * tileWidth);
-                }
-            }
-
-            if (selectedDropType is not null)
-            {
-                for (int x = 0; x < game.Board.GetLength(0); x++)
-                {
-                    for (int y = 0; y < game.Board.GetLength(1); y++)
-                    {
-                        if (game.IsDropPossible(selectedDropType, new System.Drawing.Point(x, y)))
-                        {
-                            Rectangle newRect = new()
-                            {
-                                Width = tileWidth,
-                                Height = tileHeight,
-                                Fill = new SolidColorBrush(config.AvailableMoveColor)
-                            };
-                            _ = goGameCanvas.Children.Add(newRect);
-                            Canvas.SetBottom(newRect, (boardFlipped ? boardMaxY - y : y) * tileHeight);
-                            Canvas.SetLeft(newRect, (boardFlipped ? boardMaxX - x : x) * tileWidth);
-                        }
-                    }
-                }
-            }
-
             for (int x = 0; x < game.Board.GetLength(0); x++)
             {
                 for (int y = 0; y < game.Board.GetLength(1); y++)
                 {
-                    Pieces.Piece? piece = game.Board[x, y];
+                    bool? piece = game.Board[x, y];
                     if (piece is not null)
                     {
-                        Brush? backgroundBrush = null;
-                        if (piece is Pieces.King && ((piece.IsBlack && state == GameState.CheckBlack) || (!piece.IsBlack && state == GameState.CheckWhite)))
-                        {
-                            backgroundBrush = new SolidColorBrush(config.CheckedKingColor);
-                        }
-                        else if (highlightGrabbedMoves && piece == grabbedPiece)
-                        {
-                            backgroundBrush = new SolidColorBrush(config.SelectedPieceColor);
-                        }
-
+                        // TODO: Replace with character based piece display
                         Border newPiece = new()
                         {
                             Child = new Image()
                             {
-                                Source = new BitmapImage(
-                                new Uri($"pack://application:,,,/Pieces/{config.PieceSet}/{(piece.IsBlack ^ boardFlipped ? "Black" : "White")}/{piece.Name}.png"))
+                                Source = null
                             },
                             Width = tileWidth,
-                            Height = tileHeight,
-                            Background = backgroundBrush
+                            Height = tileHeight
                         };
-                        RenderOptions.SetBitmapScalingMode(newPiece, BitmapScalingMode.HighQuality);
-                        pieceViews[piece] = newPiece;
                         _ = goGameCanvas.Children.Add(newPiece);
                         Canvas.SetBottom(newPiece, (boardFlipped ? boardMaxY - y : y) * tileHeight);
                         Canvas.SetLeft(newPiece, (boardFlipped ? boardMaxX - x : x) * tileWidth);
@@ -418,7 +164,7 @@ namespace Go
             {
                 Ellipse ellipse = new()
                 {
-                    Fill = new SolidColorBrush(config.SelectedPieceColor),
+                    Fill = Brushes.Blue,
                     Opacity = 0.5,
                     Width = tileWidth * 0.8,
                     Height = tileHeight * 0.8
@@ -433,8 +179,8 @@ namespace Go
                 double arrowLength = Math.Min(tileWidth, tileHeight) / 4;
                 Petzold.Media2D.ArrowLine line = new()
                 {
-                    Stroke = new SolidColorBrush(config.SelectedPieceColor),
-                    Fill = new SolidColorBrush(config.SelectedPieceColor),
+                    Stroke = Brushes.Blue,
+                    Fill = Brushes.Blue,
                     Opacity = 0.5,
                     StrokeThickness = 10,
                     ArrowLength = arrowLength,
@@ -449,28 +195,6 @@ namespace Go
             }
         }
 
-        private void UpdateCursor()
-        {
-            if (game.GameOver)
-            {
-                Mouse.OverrideCursor = Cursors.Arrow;
-                return;
-            }
-            if (grabbedPiece is not null && !highlightGrabbedMoves)
-            {
-                Mouse.OverrideCursor = Cursors.ScrollAll;
-                return;
-            }
-            Pieces.Piece? checkPiece = GetPieceAtCanvasPoint(Mouse.GetPosition(goGameCanvas));
-            if (checkPiece is not null && ((checkPiece.IsBlack && game.CurrentTurnBlack && !blackIsComputer)
-                || (!checkPiece.IsBlack && !game.CurrentTurnBlack && !whiteIsComputer)))
-            {
-                Mouse.OverrideCursor = Cursors.Hand;
-                return;
-            }
-            Mouse.OverrideCursor = Cursors.Arrow;
-        }
-
         /// <summary>
         /// If the game has ended, alert the user how it ended, otherwise do nothing
         /// </summary>
@@ -478,17 +202,8 @@ namespace Go
         {
             if (game.GameOver)
             {
-                _ = MessageBox.Show(game.DetermineGameState() switch
-                {
-                    GameState.CheckMateBlack => "White wins by checkmate!",
-                    GameState.CheckMateWhite => "Black wins by checkmate!",
-                    GameState.StalemateBlack => "White wins by stalemate!",
-                    GameState.StalemateWhite => "Black wins by stalemate!",
-                    GameState.PerpetualCheckBlack => "Black wins as white attempted to draw through perpetual check",
-                    GameState.PerpetualCheckWhite => "White wins as black attempted to draw through perpetual check",
-                    GameState.DrawRepetition => "Game drawn as the same position has occured four times",
-                    _ => "Game over"
-                }, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
+                // TODO: Determine winner and show how much they won by
+                _ = MessageBox.Show("Game over", "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -556,7 +271,8 @@ namespace Go
                     return;
                 }
 
-                _ = game.MovePiece(bestMove.Source, bestMove.Destination, true, doPromotion: bestMove.DoPromotion);
+                // TODO: Replace with new drop piece method
+                _ = game.MovePiece(bestMove.Source, bestMove.Destination, true);
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
                 if (config.UpdateEvalAfterBot)
@@ -576,19 +292,6 @@ namespace Go
                 (int)((!boardFlipped ? goGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
         }
 
-        private Pieces.Piece? GetPieceAtCanvasPoint(Point position)
-        {
-            if (position.X < 0 || position.Y < 0
-                || position.X > goGameCanvas.ActualWidth || position.Y > goGameCanvas.ActualHeight)
-            {
-                return null;
-            }
-            System.Drawing.Point coord = GetCoordFromCanvasPoint(position);
-            return coord.X < 0 || coord.Y < 0 || coord.X >= game.Board.GetLength(0) || coord.Y >= game.Board.GetLength(1)
-                ? null
-                    : game.Board[coord.X, coord.Y];
-        }
-
         private async Task NewGame(bool minigo)
         {
             cancelMoveComputation.Cancel();
@@ -596,13 +299,9 @@ namespace Go
             game = new GoGame(minigo);
             currentBestMove = null;
             manuallyEvaluating = false;
-            grabbedPiece = null;
-            highlightGrabbedMoves = false;
-            selectedDropType = null;
             blackEvaluation.Content = "?";
             whiteEvaluation.Content = "?";
             UpdateGameDisplay();
-            UpdateCursor();
             await CheckComputerMove();
         }
 
@@ -618,89 +317,13 @@ namespace Go
             moveListColumn.Width = ActualWidth < 900 ? new GridLength(0) : new GridLength(210);
         }
 
-        private void Window_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (grabbedPiece is not null && !highlightGrabbedMoves)
-            {
-                Canvas.SetBottom(pieceViews[grabbedPiece], goGameCanvas.ActualHeight - Mouse.GetPosition(goGameCanvas).Y - (tileHeight / 2));
-                Canvas.SetLeft(pieceViews[grabbedPiece], Mouse.GetPosition(goGameCanvas).X - (tileWidth / 2));
-            }
-            UpdateCursor();
-        }
-
-        private async void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Point mousePos = Mouse.GetPosition(goGameCanvas);
             if (e.ChangedButton == MouseButton.Left)
             {
                 squareHighlights.Clear();
                 lineHighlights.Clear();
-                if (game.GameOver)
-                {
-                    return;
-                }
-
-                if (selectedDropType is not null && mousePos.X >= 0 && mousePos.Y >= 0 && mousePos.X <= goGameCanvas.ActualWidth
-                    && mousePos.Y <= goGameCanvas.ActualHeight)
-                {
-                    System.Drawing.Point destination = GetCoordFromCanvasPoint(mousePos);
-                    bool success = game.MovePiece(GoGame.PieceDropSources[selectedDropType], destination, doPromotion: null);
-                    if (success)
-                    {
-                        highlightGrabbedMoves = false;
-                        grabbedPiece = null;
-                        currentBestMove = null;
-                        selectedDropType = null;
-                        UpdateCursor();
-                        UpdateGameDisplay();
-                        movesScroll.ScrollToBottom();
-                        PushEndgameMessage();
-                        await CheckComputerMove();
-                        return;
-                    }
-                }
-                selectedDropType = null;
-
-                // If a piece is selected, try to move it
-                if (grabbedPiece is not null && highlightGrabbedMoves)
-                {
-                    System.Drawing.Point destination = GetCoordFromCanvasPoint(mousePos);
-                    bool success = game.MovePiece(grabbedPiece.Position, destination, doPromotion: null);
-                    if (success)
-                    {
-                        highlightGrabbedMoves = false;
-                        grabbedPiece = null;
-                        currentBestMove = null;
-                        UpdateCursor();
-                        UpdateGameDisplay();
-                        movesScroll.ScrollToBottom();
-                        PushEndgameMessage();
-                        await CheckComputerMove();
-                        return;
-                    }
-                }
-
-                highlightGrabbedMoves = false;
-                Pieces.Piece? toCheck = GetPieceAtCanvasPoint(mousePos);
-                if (toCheck is not null)
-                {
-                    if ((toCheck.IsBlack && game.CurrentTurnBlack && !blackIsComputer)
-                        || (!toCheck.IsBlack && !game.CurrentTurnBlack && !whiteIsComputer))
-                    {
-                        grabbedPiece = toCheck;
-                        manuallyEvaluating = false;
-                        cancelMoveComputation.Cancel();
-                        cancelMoveComputation = new CancellationTokenSource();
-                    }
-                    else
-                    {
-                        grabbedPiece = null;
-                    }
-                }
-                else
-                {
-                    grabbedPiece = null;
-                }
             }
             else
             {
@@ -712,7 +335,6 @@ namespace Go
                 mouseDownStartPoint = GetCoordFromCanvasPoint(mousePos);
             }
             UpdateGameDisplay();
-            UpdateCursor();
         }
 
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
@@ -723,33 +345,17 @@ namespace Go
                 {
                     return;
                 }
-                if (grabbedPiece is not null)
+                System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
+                // TODO: Replace with new drop piece method
+                bool success = game.MovePiece(destination, destination);
+                if (success)
                 {
-                    System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
-                    if (destination == grabbedPiece.Position)
-                    {
-                        highlightGrabbedMoves = true;
-                        UpdateCursor();
-                        UpdateGameDisplay();
-                        return;
-                    }
-                    bool success = game.MovePiece(grabbedPiece.Position, destination, doPromotion: null);
-                    if (success)
-                    {
-                        grabbedPiece = null;
-                        highlightGrabbedMoves = false;
-                        currentBestMove = null;
-                        UpdateCursor();
-                        UpdateGameDisplay();
-                        movesScroll.ScrollToBottom();
-                        PushEndgameMessage();
-                        await CheckComputerMove();
-                        return;
-                    }
-                    else
-                    {
-                        highlightGrabbedMoves = true;
-                    }
+                    currentBestMove = null;
+                    UpdateGameDisplay();
+                    movesScroll.ScrollToBottom();
+                    PushEndgameMessage();
+                    await CheckComputerMove();
+                    return;
                 }
             }
             else
@@ -776,16 +382,6 @@ namespace Go
                     }
                 }
             }
-            UpdateCursor();
-            UpdateGameDisplay();
-        }
-
-        private void Window_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (grabbedPiece is not null)
-            {
-                highlightGrabbedMoves = true;
-            }
             UpdateGameDisplay();
         }
 
@@ -797,12 +393,8 @@ namespace Go
                 return;
             }
             manuallyEvaluating = true;
-            grabbedPiece = null;
-            highlightGrabbedMoves = false;
-            selectedDropType = null;
             UpdateEvaluationMeter(null, game.CurrentTurnBlack);
             UpdateGameDisplay();
-            UpdateCursor();
 
             CancellationToken cancellationToken = cancelMoveComputation.Token;
             BoardAnalysis.PossibleMove bestMove = await GetEngineMove(cancellationToken);
@@ -846,34 +438,6 @@ namespace Go
             await NewGame(false);
         }
 
-        private async void NewMiniGame_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = false;
-            whiteIsComputer = false;
-            await NewGame(true);
-        }
-
-        private async void NewMiniGameCpuBlack_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = false;
-            whiteIsComputer = true;
-            await NewGame(true);
-        }
-
-        private async void NewMiniGameCpuWhite_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = true;
-            whiteIsComputer = false;
-            await NewGame(true);
-        }
-
-        private async void NewMiniGameCpuOnly_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = true;
-            whiteIsComputer = true;
-            await NewGame(true);
-        }
-
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             cancelMoveComputation.Cancel();
@@ -881,54 +445,18 @@ namespace Go
             File.WriteAllText(jsonPath, JsonConvert.SerializeObject(config));
         }
 
-        private async void KIFExport_Click(object sender, RoutedEventArgs e)
-        {
-            manuallyEvaluating = false;
-            cancelMoveComputation.Cancel();
-            cancelMoveComputation = new CancellationTokenSource();
-            _ = new KIFExport(game, blackIsComputer, whiteIsComputer).ShowDialog();
-            await CheckComputerMove();
-        }
-
         private async void CustomGame_Click(object sender, RoutedEventArgs e)
         {
             manuallyEvaluating = false;
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
-            CustomGame customDialog = new(config, false);
+            CustomGame customDialog = new(false);
             _ = customDialog.ShowDialog();
             if (customDialog.GeneratedGame is not null)
             {
                 game = customDialog.GeneratedGame;
                 blackIsComputer = customDialog.BlackIsComputer;
                 whiteIsComputer = customDialog.WhiteIsComputer;
-                grabbedPiece = null;
-                highlightGrabbedMoves = false;
-                selectedDropType = null;
-                currentBestMove = null;
-                blackEvaluation.Content = "?";
-                whiteEvaluation.Content = "?";
-                UpdateGameDisplay();
-                PushEndgameMessage();
-            }
-            await CheckComputerMove();
-        }
-
-        private async void CustomMiniGame_Click(object sender, RoutedEventArgs e)
-        {
-            manuallyEvaluating = false;
-            cancelMoveComputation.Cancel();
-            cancelMoveComputation = new CancellationTokenSource();
-            CustomGame customDialog = new(config, true);
-            _ = customDialog.ShowDialog();
-            if (customDialog.GeneratedGame is not null)
-            {
-                game = customDialog.GeneratedGame;
-                blackIsComputer = customDialog.BlackIsComputer;
-                whiteIsComputer = customDialog.WhiteIsComputer;
-                grabbedPiece = null;
-                highlightGrabbedMoves = false;
-                selectedDropType = null;
                 currentBestMove = null;
                 blackEvaluation.Content = "?";
                 whiteEvaluation.Content = "?";
@@ -955,29 +483,6 @@ namespace Go
         {
             _ = new Customisation(config).ShowDialog();
             goBoardBackground.Background = new SolidColorBrush(config.BoardColor);
-            miniGoBoardBackground.Background = new SolidColorBrush(config.BoardColor);
-            UpdateGameDisplay();
-        }
-
-        private void PieceSetItem_Click(object sender, RoutedEventArgs e)
-        {
-            string chosenSet = (string)((MenuItem)sender).Tag;
-            config.PieceSet = chosenSet;
-            foreach (MenuItem item in pieceSetItem.Items)
-            {
-                item.IsChecked = chosenSet == (string)item.Tag;
-            }
-            UpdateGameDisplay();
-        }
-
-        private void NotationSetItem_Click(object sender, RoutedEventArgs e)
-        {
-            string chosenNotation = (string)((MenuItem)sender).Tag;
-            config.Notation = chosenNotation;
-            foreach (MenuItem item in notationSetItem.Items)
-            {
-                item.IsChecked = chosenNotation == (string)item.Tag;
-            }
             UpdateGameDisplay();
         }
 
@@ -994,36 +499,6 @@ namespace Go
                 }
                 UpdateGameDisplay();
                 await CheckComputerMove();
-            }
-        }
-
-        private void WhiteDrop_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left && !game.GameOver)
-            {
-                Type clickedType = (Type)((Grid)sender).Tag;
-                if (game.CurrentTurnBlack || whiteIsComputer || game.WhitePieceDrops[clickedType] == 0)
-                {
-                    return;
-                }
-                selectedDropType = clickedType;
-                grabbedPiece = null;
-                highlightGrabbedMoves = false;
-            }
-        }
-
-        private void BlackDrop_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left && !game.GameOver)
-            {
-                Type clickedType = (Type)((Grid)sender).Tag;
-                if (!game.CurrentTurnBlack || blackIsComputer || game.BlackPieceDrops[clickedType] == 0)
-                {
-                    return;
-                }
-                selectedDropType = clickedType;
-                grabbedPiece = null;
-                highlightGrabbedMoves = false;
             }
         }
     }
