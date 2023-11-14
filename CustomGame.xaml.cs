@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections.Generic;
+using System.Windows.Shapes;
 
 namespace Go
 {
@@ -21,20 +22,14 @@ namespace Go
         private double tileWidth;
         private double tileHeight;
 
-        public CustomGame(bool minigo)
+        public CustomGame()
         {
             GeneratedGame = null;
 
             InitializeComponent();
 
-            if (minigo)
-            {
-                Board = new bool?[5, 5];
-            }
-            else
-            {
-                Board = new bool?[9, 9];
-            }
+            // TODO: Customizable board size (with UI)
+            Board = new bool?[19, 19];
         }
 
         public void UpdateBoard()
@@ -51,14 +46,12 @@ namespace Go
                     bool? stone = Board[x, y];
                     if (stone is not null)
                     {
-                        // TODO: Replace with character based stone display
-                        Image newStone = new()
+                        Ellipse newStone = new()
                         {
-                            Source = null,
                             Width = tileWidth,
-                            Height = tileHeight
+                            Height = tileHeight,
+                            Fill = stone.Value ? Brushes.Black : Brushes.White
                         };
-                        RenderOptions.SetBitmapScalingMode(newStone, BitmapScalingMode.HighQuality);
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, y * tileHeight);
                         Canvas.SetLeft(newStone, x * tileWidth);

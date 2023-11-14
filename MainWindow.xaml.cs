@@ -139,15 +139,11 @@ namespace Go
                     bool? stone = game.Board[x, y];
                     if (stone is not null)
                     {
-                        // TODO: Replace with character based stone display
-                        Border newStone = new()
+                        Ellipse newStone = new()
                         {
-                            Child = new Image()
-                            {
-                                Source = null
-                            },
                             Width = tileWidth,
-                            Height = tileHeight
+                            Height = tileHeight,
+                            Fill = stone.Value ? Brushes.Black : Brushes.White
                         };
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);
@@ -219,7 +215,6 @@ namespace Go
             GoGame moveStringGenerator = game.Clone();
             foreach (System.Drawing.Point destination in bestMove.Value.BestLine)
             {
-                // TODO: Use new drop stone method
                 _ = moveStringGenerator.PlaceStone(destination, true);
                 convertedBestLine += " " + moveStringGenerator.MoveText[^1];
             }
@@ -253,7 +248,6 @@ namespace Go
                     return;
                 }
 
-                // TODO: Replace with new drop stone method
                 _ = game.PlaceStone(bestMove.Value.Destination, true);
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
@@ -328,7 +322,6 @@ namespace Go
                     return;
                 }
                 System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
-                // TODO: Replace with new drop stone method
                 bool success = game.PlaceStone(destination);
                 if (success)
                 {
@@ -432,7 +425,7 @@ namespace Go
             manuallyEvaluating = false;
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
-            CustomGame customDialog = new(false);
+            CustomGame customDialog = new();
             _ = customDialog.ShowDialog();
             if (customDialog.GeneratedGame is not null)
             {

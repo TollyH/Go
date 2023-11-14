@@ -53,7 +53,7 @@
                 </Grid>
             </StackPanel>
         </Border>
-        <Button x:Name="startButton" Content="Start" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="7" Width="50" IsEnabled="False" Click="startButton_Click"/>
+        <Button x:Name="startButton" Content="Start" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="7" Width="50" Click="startButton_Click"/>
         <Button x:Name="importButton" Content="Load Board Text" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
         <Grid x:Name="importOverlay" Grid.ColumnSpan="2" Grid.Column="0" Grid.RowSpan="3" Background="White" Visibility="Collapsed">
             <Label Content="Enter a board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>

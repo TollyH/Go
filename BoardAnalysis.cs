@@ -82,6 +82,7 @@ namespace Go
             ConcurrentBag<PossibleMove> possibleMoves = new();
             int remainingThreads = 0;
 
+            // TODO: Also test passing
             for (int x = 0; x < game.Board.GetLength(0); x++)
             {
                 for (int y = 0; y < game.Board.GetLength(1); y++)
@@ -155,7 +156,7 @@ namespace Go
 
             PossibleMove? bestMove = null;
 
-            // TODO: Remove drop counts, just iterate whole board
+            // TODO: Also test passing
             for (int x = 0; x < game.Board.GetLength(0); x++)
             {
                 for (int y = 0; y < game.Board.GetLength(1); y++)
