@@ -18,21 +18,14 @@ namespace Go
         public bool CurrentTurnBlack { get; private set; }
         public bool GameOver { get; private set; }
 
-        /// <summary>
-        /// A list of the moves made this game as
-        /// (stoneLetter, sourcePosition, destinationPosition, promotionHappened, dropHappened)
-        /// </summary>
-        // TODO: Remove unneeded parameters
-        public List<(string, Point, Point, bool, bool)> Moves { get; }
-        public List<string> JapaneseMoveText { get; }
-        public List<string> WesternMoveText { get; }
+        public List<Point> Moves { get; }
+        public List<string> MoveText { get; }
         public GoGame? PreviousGameState { get; private set; }
-        // TODO: Replace with captured stone counts
-        public Dictionary<Type, int> BlackStoneDrops { get; }
-        public Dictionary<Type, int> WhiteStoneDrops { get; }
+        public int BlackCaptures { get; }
+        public int WhiteCaptures { get; }
 
         // Used to detect repetition
-        public Dictionary<string, int> BoardCounts { get; }
+        public HashSet<string> PreviousBoards { get; }
 
         /// <summary>
         /// Create a new standard go game with all values at their defaults
@@ -42,11 +35,10 @@ namespace Go
             CurrentTurnBlack = true;
             GameOver = false;
 
-            Moves = new List<(string, Point, Point, bool, bool)>();
-            // TODO: Rename to just MoveText
-            WesternMoveText = new List<string>();
+            Moves = new List<Point>();
+            MoveText = new List<string>();
 
-            BoardCounts = new Dictionary<string, int>();
+            PreviousBoards = new HashSet<string>();
 
             Board = new bool?[boardWidth, boardHeight];
 
@@ -57,9 +49,8 @@ namespace Go
         /// Create a new instance of a go game, setting each game parameter to a non-default value
         /// </summary>
         public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver,
-            List<(string, Point, Point, bool, bool)> moves, List<string> japaneseMoveText,
-            List<string> westernMoveText, Dictionary<Type, int>? blackStoneDrops,
-            Dictionary<Type, int>? whiteStoneDrops, Dictionary<string, int> boardCounts,
+            List<Point> moves, List<string> moveText, int blackCaptures,
+            int whiteCaptures, HashSet<string> previousBoards,
             string? initialState, GoGame? previousGameState)
         {
             Board = board;
@@ -67,11 +58,10 @@ namespace Go
             CurrentTurnBlack = currentTurnBlack;
             GameOver = gameOver;
             Moves = moves;
-            JapaneseMoveText = japaneseMoveText;
-            WesternMoveText = westernMoveText;
-            BlackStoneDrops = blackStoneDrops ?? new Dictionary<Type, int>();
-            WhiteStoneDrops = whiteStoneDrops ?? new Dictionary<Type, int>();
-            BoardCounts = boardCounts;
+            MoveText = moveText;
+            BlackCaptures = blackCaptures;
+            WhiteCaptures = whiteCaptures;
+            PreviousBoards = previousBoards;
 
             InitialState = initialState ?? ToString();
             PreviousGameState = previousGameState;
@@ -91,9 +81,9 @@ namespace Go
                 }
             }
 
-            return new GoGame(boardClone, CurrentTurnBlack, GameOver, new(Moves), new(JapaneseMoveText),
-                new(WesternMoveText), new Dictionary<Type, int>(BlackStoneDrops),
-                new Dictionary<Type, int>(WhiteStoneDrops), new(BoardCounts), InitialState, PreviousGameState?.Clone());
+            return new GoGame(boardClone, CurrentTurnBlack, GameOver, new List<Point>(Moves),
+                new List<string>(MoveText), BlackCaptures, WhiteCaptures,
+                new HashSet<string>(PreviousBoards), InitialState, PreviousGameState?.Clone());
         }
 
         /// <summary>
@@ -104,11 +94,6 @@ namespace Go
         {
             if (destination.X < 0 || destination.Y < 0
                 || destination.X >= Board.GetLength(0) || destination.Y >= Board.GetLength(1))
-            {
-                return false;
-            }
-            if ((CurrentTurnBlack && BlackStoneDrops[dropType] == 0)
-                || (!CurrentTurnBlack && WhiteStoneDrops[dropType] == 0))
             {
                 return false;
             }
@@ -150,7 +135,7 @@ namespace Go
                 oldGame = Clone();
                 PreviousGameState = oldGame;
             }
-            Moves.Add(("stone", source, destination, false, source.X == -1));
+            Moves.Add(destination);
 
             Board[destination.X, destination.Y] = CurrentTurnBlack;
             if (source.X != -1)
@@ -159,27 +144,18 @@ namespace Go
             }
 
             CurrentTurnBlack = !CurrentTurnBlack;
-
-            string newBoardString = ToString();
-            if (BoardCounts.ContainsKey(newBoardString))
-            {
-                BoardCounts[newBoardString]++;
-            }
-            else
-            {
-                BoardCounts[newBoardString] = 1;
-            }
+            _ = PreviousBoards.Add(ToString());
 
             if (updateMoveText)
             {
-                string newWesternMove = CurrentTurnBlack ? "B" : "W";
+                string newMove = CurrentTurnBlack ? "B" : "W";
 
-                newWesternMove += source.X == -1 ? '*'
+                newMove += source.X == -1 ? '*'
                     : oldGame.Board[destination.X, destination.Y] is not null ? 'x'
                     : '-';
-                newWesternMove += $"{Board.GetLength(0) - destination.X}{Board.GetLength(1) - destination.Y}";
+                newMove += $"{Board.GetLength(0) - destination.X}{Board.GetLength(1) - destination.Y}";
 
-                WesternMoveText.Add(newWesternMove);
+                MoveText.Add(newMove);
             }
 
             return true;
@@ -327,12 +303,10 @@ namespace Go
             bool currentTurnBlack = fields[1] == "b" || (fields[1] == "w" ? false
                 : throw new FormatException("Current turn specifier must be either w or b"));
 
-            Dictionary<Type, int> blackStoneDrops = new();
-            Dictionary<Type, int> whiteStoneDrops = new();
-
             // Board string doesn't define what the previous moves were, so they moves list starts empty
             return new GoGame(board, currentTurnBlack, false,  // TODO: Format should contain field for whether game is over
-                new(), new(), new(), blackStoneDrops, whiteStoneDrops, new(), null, null);
+                new List<Point>(), new List<string>(), 0, 0,  // TODO: Format should contain field for number of captures
+                new HashSet<string>(), null, null);
         }
     }
 }

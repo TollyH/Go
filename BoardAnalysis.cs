@@ -21,14 +21,6 @@ namespace Go
         public static double CalculateGameValue(GoGame game)
         {
             double inHandTotal = 0;
-            foreach ((Type dropType, int count) in game.BlackStoneDrops)
-            {
-                inHandTotal += count;
-            }
-            foreach ((Type dropType, int count) in game.WhiteStoneDrops)
-            {
-                inHandTotal -= count;
-            }
             return inHandTotal + game.Board.OfType<bool>().Sum(p => p ? 1 : -1);
         }
 
@@ -90,40 +82,32 @@ namespace Go
             ConcurrentBag<PossibleMove> possibleMoves = new();
             int remainingThreads = 0;
 
-            // TODO: Remove drop counts, just iterate whole board
-            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackStoneDrops : game.WhiteStoneDrops;
-            foreach ((Type dropType, int count) in dropCounts)
+            for (int x = 0; x < game.Board.GetLength(0); x++)
             {
-                if (count > 0)
+                for (int y = 0; y < game.Board.GetLength(1); y++)
                 {
-                    for (int x = 0; x < game.Board.GetLength(0); x++)
+                    Point pt = new(x, y);
+                    if (game.IsDropPossible(null, pt))
                     {
-                        for (int y = 0; y < game.Board.GetLength(1); y++)
-                        {
-                            Point pt = new(x, y);
-                            if (game.IsDropPossible(dropType, pt))
-                            {
-                                remainingThreads++;
-                                Point thisDropPoint = pt;
-                                GoGame gameClone = game.Clone();
-                                List<Point> thisLine = new() { thisDropPoint };
-                                _ = gameClone.MoveStone(thisDropPoint, thisDropPoint, true, updateMoveText: false);
+                        remainingThreads++;
+                        Point thisDropPoint = pt;
+                        GoGame gameClone = game.Clone();
+                        List<Point> thisLine = new() { thisDropPoint };
+                        _ = gameClone.MoveStone(thisDropPoint, thisDropPoint, true, updateMoveText: false);
 
-                                Thread processThread = new(() =>
-                                {
-                                    PossibleMove? bestSubMove = MinimaxMove(gameClone,
-                                        double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, thisLine, cancellationToken);
-                                    // Don't include default value in results
-                                    if (bestSubMove is not null)
-                                    {
-                                        possibleMoves.Add(new PossibleMove(thisDropPoint,
-                                            bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
-                                    }
-                                    remainingThreads--;
-                                });
-                                processThread.Start();
+                        Thread processThread = new(() =>
+                        {
+                            PossibleMove? bestSubMove = MinimaxMove(gameClone,
+                                double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, thisLine, cancellationToken);
+                            // Don't include default value in results
+                            if (bestSubMove is not null)
+                            {
+                                possibleMoves.Add(new PossibleMove(thisDropPoint,
+                                    bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
                             }
-                        }
+                            remainingThreads--;
+                        });
+                        processThread.Start();
                     }
                 }
             }
@@ -146,7 +130,7 @@ namespace Go
         private static PossibleMove? MinimaxMove(GoGame game, double alpha, double beta, int depth, int maxDepth,
             List<Point> currentLine, CancellationToken cancellationToken)
         {
-            (_, Point lastMoveSrc, Point lastMoveDst, _, _) = game.Moves.Last();
+            Point lastMoveDst = game.Moves.Last();
             if (game.GameOver)
             {
                 // TODO: Check if game is won and who by
@@ -172,62 +156,55 @@ namespace Go
             PossibleMove? bestMove = null;
 
             // TODO: Remove drop counts, just iterate whole board
-            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackStoneDrops : game.WhiteStoneDrops;
-            foreach ((Type dropType, int count) in dropCounts)
+            for (int x = 0; x < game.Board.GetLength(0); x++)
             {
-                if (count > 0)
+                for (int y = 0; y < game.Board.GetLength(1); y++)
                 {
-                    for (int x = 0; x < game.Board.GetLength(0); x++)
+                    Point pt = new(x, y);
+                    if (game.IsDropPossible(null, pt))
                     {
-                        for (int y = 0; y < game.Board.GetLength(1); y++)
+                        GoGame gameClone = game.Clone();
+                        List<Point> newLine = new(currentLine) { pt };
+                        _ = gameClone.MoveStone(pt, pt, true, updateMoveText: false);
+                        PossibleMove? potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
+                        if (potentialMove is null)
                         {
-                            Point pt = new(x, y);
-                            if (game.IsDropPossible(dropType, pt))
+                            continue;
+                        }
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            return bestMove;
+                        }
+                        if (game.CurrentTurnBlack)
+                        {
+                            if (bestMove is null || double.IsNegativeInfinity(bestMove.Value.EvaluatedFutureValue)
+                                || potentialMove.Value.EvaluatedFutureValue > bestMove.Value.EvaluatedFutureValue)
                             {
-                                GoGame gameClone = game.Clone();
-                                List<Point> newLine = new(currentLine) { pt };
-                                _ = gameClone.MoveStone(pt, pt, true, updateMoveText: false);
-                                PossibleMove? potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
-                                if (potentialMove is null)
-                                {
-                                    continue;
-                                }
-                                if (cancellationToken.IsCancellationRequested)
-                                {
-                                    return bestMove;
-                                }
-                                if (game.CurrentTurnBlack)
-                                {
-                                    if (bestMove is null || double.IsNegativeInfinity(bestMove.Value.EvaluatedFutureValue)
-                                        || potentialMove.Value.EvaluatedFutureValue > bestMove.Value.EvaluatedFutureValue)
-                                    {
-                                        bestMove = new PossibleMove(pt, potentialMove.Value.EvaluatedFutureValue, potentialMove.Value.BestLine);
-                                    }
-                                    if (potentialMove.Value.EvaluatedFutureValue >= beta)
-                                    {
-                                        return bestMove;
-                                    }
-                                    if (potentialMove.Value.EvaluatedFutureValue > alpha)
-                                    {
-                                        alpha = potentialMove.Value.EvaluatedFutureValue;
-                                    }
-                                }
-                                else
-                                {
-                                    if (bestMove is null || double.IsPositiveInfinity(bestMove.Value.EvaluatedFutureValue)
-                                        || potentialMove.Value.EvaluatedFutureValue < bestMove.Value.EvaluatedFutureValue)
-                                    {
-                                        bestMove = new PossibleMove(pt, potentialMove.Value.EvaluatedFutureValue, potentialMove.Value.BestLine);
-                                    }
-                                    if (potentialMove.Value.EvaluatedFutureValue <= alpha)
-                                    {
-                                        return bestMove;
-                                    }
-                                    if (potentialMove.Value.EvaluatedFutureValue < beta)
-                                    {
-                                        beta = potentialMove.Value.EvaluatedFutureValue;
-                                    }
-                                }
+                                bestMove = new PossibleMove(pt, potentialMove.Value.EvaluatedFutureValue, potentialMove.Value.BestLine);
+                            }
+                            if (potentialMove.Value.EvaluatedFutureValue >= beta)
+                            {
+                                return bestMove;
+                            }
+                            if (potentialMove.Value.EvaluatedFutureValue > alpha)
+                            {
+                                alpha = potentialMove.Value.EvaluatedFutureValue;
+                            }
+                        }
+                        else
+                        {
+                            if (bestMove is null || double.IsPositiveInfinity(bestMove.Value.EvaluatedFutureValue)
+                                || potentialMove.Value.EvaluatedFutureValue < bestMove.Value.EvaluatedFutureValue)
+                            {
+                                bestMove = new PossibleMove(pt, potentialMove.Value.EvaluatedFutureValue, potentialMove.Value.BestLine);
+                            }
+                            if (potentialMove.Value.EvaluatedFutureValue <= alpha)
+                            {
+                                return bestMove;
+                            }
+                            if (potentialMove.Value.EvaluatedFutureValue < beta)
+                            {
+                                beta = potentialMove.Value.EvaluatedFutureValue;
                             }
                         }
                     }

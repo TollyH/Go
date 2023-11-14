@@ -86,9 +86,9 @@ namespace Go
             }
 
             movesPanel.Children.Clear();
-            for (int i = 0; i < game.WesternMoveText.Count; i++)
+            for (int i = 0; i < game.MoveText.Count; i++)
             {
-                string text = $"{i + 1}. {game.WesternMoveText[i]}";
+                string text = $"{i + 1}. {game.MoveText[i]}";
                 _ = movesPanel.Children.Add(new Label()
                 {
                     Content = text,
@@ -104,7 +104,7 @@ namespace Go
             // TODO: No source and destination now, just destination
             if (game.Moves.Count > 0)
             {
-                (_, System.Drawing.Point lastMoveSource, System.Drawing.Point lastMoveDestination, _, _) = game.Moves[^1];
+                System.Drawing.Point lastMoveDestination = game.Moves[^1];
 
                 Rectangle destinationMoveHighlight = new()
                 {
@@ -223,7 +223,7 @@ namespace Go
             {
                 // TODO: Use new drop stone method
                 _ = moveStringGenerator.MoveStone(destination, destination, true);
-                convertedBestLine += " " + moveStringGenerator.JapaneseMoveText[^1];
+                convertedBestLine += " " + moveStringGenerator.MoveText[^1];
             }
             toUpdate.ToolTip = convertedBestLine.Trim();
         }

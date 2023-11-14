@@ -18,9 +18,6 @@ namespace Go
         public bool BlackIsComputer { get; private set; }
         public bool WhiteIsComputer { get; private set; }
 
-        private readonly Dictionary<Type, int> blackStoneDrops = new();
-        private readonly Dictionary<Type, int> whiteStoneDrops = new();
-
         private double tileWidth;
         private double tileHeight;
 
@@ -76,7 +73,8 @@ namespace Go
             WhiteIsComputer = computerSelectWhite.IsChecked ?? false;
             bool currentTurnBlack = turnSelectBlack.IsChecked ?? false;
             GeneratedGame = new GoGame(Board, currentTurnBlack, false,
-                new(), new(), new(), blackStoneDrops, whiteStoneDrops, new(), null, null);
+                new List<System.Drawing.Point>(), new List<string>(),
+                0, 0, new HashSet<string>(), null, null);
             Close();
         }
 
