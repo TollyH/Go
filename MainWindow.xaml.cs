@@ -17,7 +17,7 @@ namespace Go
     /// </summary>
     public partial class MainWindow : Window
     {
-        private GoGame game = new(false);
+        private GoGame game = new(19, 19);
         private readonly Settings config;
 
         private HashSet<System.Drawing.Point> squareHighlights = new();
@@ -140,11 +140,11 @@ namespace Go
             {
                 for (int y = 0; y < game.Board.GetLength(1); y++)
                 {
-                    bool? piece = game.Board[x, y];
-                    if (piece is not null)
+                    bool? stone = game.Board[x, y];
+                    if (stone is not null)
                     {
-                        // TODO: Replace with character based piece display
-                        Border newPiece = new()
+                        // TODO: Replace with character based stone display
+                        Border newStone = new()
                         {
                             Child = new Image()
                             {
@@ -153,9 +153,9 @@ namespace Go
                             Width = tileWidth,
                             Height = tileHeight
                         };
-                        _ = goGameCanvas.Children.Add(newPiece);
-                        Canvas.SetBottom(newPiece, (boardFlipped ? boardMaxY - y : y) * tileHeight);
-                        Canvas.SetLeft(newPiece, (boardFlipped ? boardMaxX - x : x) * tileWidth);
+                        _ = goGameCanvas.Children.Add(newStone);
+                        Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);
+                        Canvas.SetLeft(newStone, (boardFlipped ? boardMaxX - x : x) * tileWidth);
                     }
                 }
             }
@@ -236,7 +236,7 @@ namespace Go
             GoGame moveStringGenerator = game.Clone();
             foreach ((System.Drawing.Point source, System.Drawing.Point destination, bool doPromotion) in bestMove.Value.BestLine)
             {
-                _ = moveStringGenerator.MovePiece(source, destination, true, doPromotion);
+                _ = moveStringGenerator.MoveStone(source, destination, true, doPromotion);
                 convertedBestLine += " " + moveStringGenerator.JapaneseMoveText[^1];
             }
             toUpdate.ToolTip = convertedBestLine.Trim();
@@ -248,8 +248,7 @@ namespace Go
         private async Task<BoardAnalysis.PossibleMove> GetEngineMove(CancellationToken cancellationToken)
         {
             BoardAnalysis.PossibleMove? bestMove = null;
-            // Search deeper in minigo games
-            bestMove ??= await BoardAnalysis.EstimateBestPossibleMove(game, game.Board.GetLength(0) == 5 ? 4 : 3, cancellationToken);
+            bestMove ??= await BoardAnalysis.EstimateBestPossibleMove(game, 4, cancellationToken);
             return bestMove.Value;
         }
 
@@ -271,8 +270,8 @@ namespace Go
                     return;
                 }
 
-                // TODO: Replace with new drop piece method
-                _ = game.MovePiece(bestMove.Source, bestMove.Destination, true);
+                // TODO: Replace with new drop stone method
+                _ = game.MoveStone(bestMove.Source, bestMove.Destination, true);
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
                 if (config.UpdateEvalAfterBot)
@@ -292,11 +291,11 @@ namespace Go
                 (int)((!boardFlipped ? goGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
         }
 
-        private async Task NewGame(bool minigo)
+        private async Task NewGame(int boardWidth, int boardHeight)
         {
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
-            game = new GoGame(minigo);
+            game = new GoGame(boardWidth, boardHeight);
             currentBestMove = null;
             manuallyEvaluating = false;
             blackEvaluation.Content = "?";
@@ -346,8 +345,8 @@ namespace Go
                     return;
                 }
                 System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
-                // TODO: Replace with new drop piece method
-                bool success = game.MovePiece(destination, destination);
+                // TODO: Replace with new drop stone method
+                bool success = game.MoveStone(destination, destination);
                 if (success)
                 {
                     currentBestMove = null;
@@ -414,28 +413,28 @@ namespace Go
         {
             blackIsComputer = false;
             whiteIsComputer = false;
-            await NewGame(false);
+            await NewGame(19, 19);
         }
 
         private async void NewGameCpuBlack_Click(object sender, RoutedEventArgs e)
         {
             blackIsComputer = false;
             whiteIsComputer = true;
-            await NewGame(false);
+            await NewGame(19, 19);
         }
 
         private async void NewGameCpuWhite_Click(object sender, RoutedEventArgs e)
         {
             blackIsComputer = true;
             whiteIsComputer = false;
-            await NewGame(false);
+            await NewGame(19, 19);
         }
 
         private async void NewGameCpuOnly_Click(object sender, RoutedEventArgs e)
         {
             blackIsComputer = true;
             whiteIsComputer = true;
-            await NewGame(false);
+            await NewGame(19, 19);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

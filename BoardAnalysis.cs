@@ -11,21 +11,21 @@ namespace Go
     public static class BoardAnalysis
     {
         /// <summary>
-        /// Calculate the value of the given game based on the pieces on the board and in hand
+        /// Calculate the value of the given game based on the stones on the board and in hand
         /// </summary>
         /// <returns>
-        /// A <see cref="double"/> representing the total piece value of the game.
+        /// A <see cref="double"/> representing the total stone value of the game.
         /// Positive means black has stronger material, negative means white does.
         /// </returns>
         // TODO: New logic for Go, include parameter for whether to use Japanese or Chinese scoring
         public static double CalculateGameValue(GoGame game)
         {
             double inHandTotal = 0;
-            foreach ((Type dropType, int count) in game.BlackPieceDrops)
+            foreach ((Type dropType, int count) in game.BlackStoneDrops)
             {
                 inHandTotal += count;
             }
-            foreach ((Type dropType, int count) in game.WhitePieceDrops)
+            foreach ((Type dropType, int count) in game.WhiteStoneDrops)
             {
                 inHandTotal -= count;
             }
@@ -113,7 +113,7 @@ namespace Go
             int remainingThreads = 0;
 
             // TODO: Remove drop counts, just iterate whole board
-            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackPieceDrops : game.WhitePieceDrops;
+            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackStoneDrops : game.WhiteStoneDrops;
             foreach ((Type dropType, int count) in dropCounts)
             {
                 if (count > 0)
@@ -129,7 +129,7 @@ namespace Go
                                 Point thisDropPoint = pt;
                                 GoGame gameClone = game.Clone();
                                 List<(Point, Point, bool)> thisLine = new() { (thisDropPoint, thisDropPoint, false) };
-                                _ = gameClone.MovePiece(thisDropPoint, thisDropPoint, true, updateMoveText: false);
+                                _ = gameClone.MoveStone(thisDropPoint, thisDropPoint, true, updateMoveText: false);
 
                                 Thread processThread = new(() =>
                                 {
@@ -198,7 +198,7 @@ namespace Go
                 game.CurrentTurnBlack ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
 
             // TODO: Remove drop counts, just iterate whole board
-            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackPieceDrops : game.WhitePieceDrops;
+            Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackStoneDrops : game.WhiteStoneDrops;
             foreach ((Type dropType, int count) in dropCounts)
             {
                 if (count > 0)
@@ -213,7 +213,7 @@ namespace Go
                                 GoGame gameClone = game.Clone();
                                 Point dropPoint = pt;
                                 List<(Point, Point, bool)> newLine = new(currentLine) { (dropPoint, dropPoint, false) };
-                                _ = gameClone.MovePiece(dropPoint, dropPoint, true, updateMoveText: false);
+                                _ = gameClone.MoveStone(dropPoint, dropPoint, true, updateMoveText: false);
                                 PossibleMove potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
                                 if (cancellationToken.IsCancellationRequested)
                                 {

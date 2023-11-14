@@ -26,7 +26,7 @@
                 <Separator/>
                 <MenuItem Header="Custom _Game..." Click="CustomGame_Click"/>
                 <Separator/>
-                <MenuItem Header="Copy SFEN _to Clipboard" Click="FENCopy_Click"/>
+                <MenuItem Header="Copy Board Text _to Clipboard" Click="FENCopy_Click"/>
             </MenuItem>
             <MenuItem Header="_Settings" Margin="2">
                 <MenuItem x:Name="flipBoardItem" Header="_Flip the Board on White's Turn" Click="SettingsCheckItem_Click" IsCheckable="True"/>

@@ -18,8 +18,8 @@ namespace Go
         public bool BlackIsComputer { get; private set; }
         public bool WhiteIsComputer { get; private set; }
 
-        private readonly Dictionary<Type, int> blackPieceDrops = new();
-        private readonly Dictionary<Type, int> whitePieceDrops = new();
+        private readonly Dictionary<Type, int> blackStoneDrops = new();
+        private readonly Dictionary<Type, int> whiteStoneDrops = new();
 
         private double tileWidth;
         private double tileHeight;
@@ -51,20 +51,20 @@ namespace Go
             {
                 for (int y = 0; y < Board.GetLength(1); y++)
                 {
-                    bool? piece = Board[x, y];
-                    if (piece is not null)
+                    bool? stone = Board[x, y];
+                    if (stone is not null)
                     {
-                        // TODO: Replace with character based piece display
-                        Image newPiece = new()
+                        // TODO: Replace with character based stone display
+                        Image newStone = new()
                         {
                             Source = null,
                             Width = tileWidth,
                             Height = tileHeight
                         };
-                        RenderOptions.SetBitmapScalingMode(newPiece, BitmapScalingMode.HighQuality);
-                        _ = goGameCanvas.Children.Add(newPiece);
-                        Canvas.SetBottom(newPiece, y * tileHeight);
-                        Canvas.SetLeft(newPiece, x * tileWidth);
+                        RenderOptions.SetBitmapScalingMode(newStone, BitmapScalingMode.HighQuality);
+                        _ = goGameCanvas.Children.Add(newStone);
+                        Canvas.SetBottom(newStone, y * tileHeight);
+                        Canvas.SetLeft(newStone, x * tileWidth);
                     }
                 }
             }
@@ -76,7 +76,7 @@ namespace Go
             WhiteIsComputer = computerSelectWhite.IsChecked ?? false;
             bool currentTurnBlack = turnSelectBlack.IsChecked ?? false;
             GeneratedGame = new GoGame(Board, currentTurnBlack, false,
-                new(), new(), new(), blackPieceDrops, whitePieceDrops, new(), null, null);
+                new(), new(), new(), blackStoneDrops, whiteStoneDrops, new(), null, null);
             Close();
         }
 
@@ -118,12 +118,12 @@ namespace Go
             WhiteIsComputer = computerSelectWhite.IsChecked ?? false;
             try
             {
-                GeneratedGame = GoGame.FromGoForsythEdwards(sfenInput.Text);
+                GeneratedGame = GoGame.FromBoardString(boardTextInput.Text);
                 Close();
             }
             catch (Exception ex)
             {
-                _ = MessageBox.Show(ex.Message, "Go Forsyth–Edwards Notation Error",
+                _ = MessageBox.Show(ex.Message, "Board Notation Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

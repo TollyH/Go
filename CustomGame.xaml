@@ -39,7 +39,7 @@
         </Grid>
         <Border Grid.Column="1" Grid.RowSpan="3" BorderBrush="Black" BorderThickness="1,0,0,0">
             <StackPanel>
-                <Label Content="Click on Board to Place Piece" Margin="5,5,5,1" Padding="0,0,0,0" FontSize="14"/>
+                <Label Content="Click on Board to Place Stone" Margin="5,5,5,1" Padding="0,0,0,0" FontSize="14"/>
                 <Label Content="Left Click = Black, Right Click = White" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
                 <Separator/>
                 <Label Content="Current Turn" Margin="5" Padding="0,0,0,0" FontSize="14"/>
@@ -54,10 +54,10 @@
             </StackPanel>
         </Border>
         <Button x:Name="startButton" Content="Start" Grid.Column="1" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="7" Width="50" IsEnabled="False" Click="startButton_Click"/>
-        <Button x:Name="importButton" Content="Load SFEN" Grid.Column="1" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
+        <Button x:Name="importButton" Content="Load Board Text" Grid.Column="1" Grid.Row="2" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
         <Grid x:Name="importOverlay" Grid.ColumnSpan="2" Grid.RowSpan="3" Background="White" Visibility="Collapsed">
-            <Label Content="Enter a Go Forsyth–Edwards Notation (SFEN) board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>
-            <TextBox x:Name="sfenInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -"/>
+            <Label Content="Enter a board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>
+            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -"/>
             <Button x:Name="submitFenButton" Content="Submit" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" Width="64" Click="submitFenButton_Click"/>
             <Button x:Name="cancelFenButton" Content="Cancel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10,10,84,10" Width="64" Click="cancelFenButton_Click"/>
         </Grid>

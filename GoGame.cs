@@ -8,9 +8,9 @@ namespace Go
     public class GoGame
     {
         /// <summary>
-        /// <see langword="null"/> = no piece,
-        /// <see langword="true"/> = black piece,
-        /// <see langword="false"/> = white piece
+        /// <see langword="null"/> = no stone,
+        /// <see langword="true"/> = black stone,
+        /// <see langword="false"/> = white stone
         /// </summary>
         public bool?[,] Board { get; }
         public string InitialState { get; }
@@ -20,16 +20,16 @@ namespace Go
 
         /// <summary>
         /// A list of the moves made this game as
-        /// (pieceLetter, sourcePosition, destinationPosition, promotionHappened, dropHappened)
+        /// (stoneLetter, sourcePosition, destinationPosition, promotionHappened, dropHappened)
         /// </summary>
         // TODO: Remove unneeded parameters
         public List<(string, Point, Point, bool, bool)> Moves { get; }
         public List<string> JapaneseMoveText { get; }
         public List<string> WesternMoveText { get; }
         public GoGame? PreviousGameState { get; private set; }
-        // TODO: Replace with captured piece counts
-        public Dictionary<Type, int> BlackPieceDrops { get; }
-        public Dictionary<Type, int> WhitePieceDrops { get; }
+        // TODO: Replace with captured stone counts
+        public Dictionary<Type, int> BlackStoneDrops { get; }
+        public Dictionary<Type, int> WhiteStoneDrops { get; }
 
         // Used to detect repetition
         public Dictionary<string, int> BoardCounts { get; }
@@ -37,7 +37,7 @@ namespace Go
         /// <summary>
         /// Create a new standard go game with all values at their defaults
         /// </summary>
-        public GoGame(bool minigo)
+        public GoGame(int boardWidth, int boardHeight)
         {
             CurrentTurnBlack = true;
             GameOver = false;
@@ -48,8 +48,7 @@ namespace Go
 
             BoardCounts = new Dictionary<string, int>();
 
-            // TODO: Custom size boards
-            Board = minigo ? new bool?[5, 5] : new bool?[9, 9];
+            Board = new bool?[boardWidth, boardHeight];
 
             InitialState = ToString();
         }
@@ -59,15 +58,10 @@ namespace Go
         /// </summary>
         public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver,
             List<(string, Point, Point, bool, bool)> moves, List<string> japaneseMoveText,
-            List<string> westernMoveText, Dictionary<Type, int>? blackPieceDrops,
-            Dictionary<Type, int>? whitePieceDrops, Dictionary<string, int> boardCounts,
+            List<string> westernMoveText, Dictionary<Type, int>? blackStoneDrops,
+            Dictionary<Type, int>? whiteStoneDrops, Dictionary<string, int> boardCounts,
             string? initialState, GoGame? previousGameState)
         {
-            if (board.GetLength(0) is not 9 and not 5 || board.GetLength(1) is not 9 and not 5)
-            {
-                throw new ArgumentException("Boards must be 9x9 or 5x5 in size");
-            }
-
             Board = board;
 
             CurrentTurnBlack = currentTurnBlack;
@@ -75,8 +69,8 @@ namespace Go
             Moves = moves;
             JapaneseMoveText = japaneseMoveText;
             WesternMoveText = westernMoveText;
-            BlackPieceDrops = blackPieceDrops ?? new Dictionary<Type, int>();
-            WhitePieceDrops = whitePieceDrops ?? new Dictionary<Type, int>();
+            BlackStoneDrops = blackStoneDrops ?? new Dictionary<Type, int>();
+            WhiteStoneDrops = whiteStoneDrops ?? new Dictionary<Type, int>();
             BoardCounts = boardCounts;
 
             InitialState = initialState ?? ToString();
@@ -98,12 +92,12 @@ namespace Go
             }
 
             return new GoGame(boardClone, CurrentTurnBlack, GameOver, new(Moves), new(JapaneseMoveText),
-                new(WesternMoveText), new Dictionary<Type, int>(BlackPieceDrops),
-                new Dictionary<Type, int>(WhitePieceDrops), new(BoardCounts), InitialState, PreviousGameState?.Clone());
+                new(WesternMoveText), new Dictionary<Type, int>(BlackStoneDrops),
+                new Dictionary<Type, int>(WhiteStoneDrops), new(BoardCounts), InitialState, PreviousGameState?.Clone());
         }
 
         /// <summary>
-        /// Determine whether a drop of the given piece type to the given destination is valid or not.
+        /// Determine whether a drop of the given stone type to the given destination is valid or not.
         /// </summary>
         // TODO: Remove drop type, add suicide check
         public bool IsDropPossible(Type dropType, Point destination)
@@ -113,8 +107,8 @@ namespace Go
             {
                 return false;
             }
-            if ((CurrentTurnBlack && BlackPieceDrops[dropType] == 0)
-                || (!CurrentTurnBlack && WhitePieceDrops[dropType] == 0))
+            if ((CurrentTurnBlack && BlackStoneDrops[dropType] == 0)
+                || (!CurrentTurnBlack && WhiteStoneDrops[dropType] == 0))
             {
                 return false;
             }
@@ -129,11 +123,11 @@ namespace Go
         }
 
         /// <summary>
-        /// Move a piece on the board from a <paramref name="source"/> coordinate to a <paramref name="destination"/> coordinate.
-        /// To perform a piece drop, set <paramref name="source"/> to a value within <see cref="PieceDropSources"/>.
+        /// Move a stone on the board from a <paramref name="source"/> coordinate to a <paramref name="destination"/> coordinate.
+        /// To perform a stone drop, set <paramref name="source"/> to a value within <see cref="StoneDropSources"/>.
         /// </summary>
         /// <param name="doPromotion">
-        /// If a piece can be promoted, should it be? <see langword="null"/> means the user should be prompted.
+        /// If a stone can be promoted, should it be? <see langword="null"/> means the user should be prompted.
         /// </param>
         /// <param name="updateMoveText">
         /// Whether the move should update the game move text and update <see cref="PreviousGameState"/>. This should usually be <see langword="true"/>,
@@ -141,8 +135,8 @@ namespace Go
         /// </param>
         /// <returns><see langword="true"/> if the move was valid and executed, <see langword="false"/> otherwise</returns>
         /// <remarks>This method will check if the move is completely valid, unless <paramref name="forceMove"/> is <see langword="true"/>. No other validity checks are required.</remarks>
-        // TODO: Replace with new drop piece method
-        public bool MovePiece(Point source, Point destination, bool forceMove = false, bool updateMoveText = true)
+        // TODO: Replace with new drop stone method
+        public bool MoveStone(Point source, Point destination, bool forceMove = false, bool updateMoveText = true)
         {
             if (!forceMove && (GameOver || !IsDropPossible(null, destination)))
             {
@@ -156,7 +150,7 @@ namespace Go
                 oldGame = Clone();
                 PreviousGameState = oldGame;
             }
-            Moves.Add(("piece", source, destination, false, source.X == -1));
+            Moves.Add(("stone", source, destination, false, source.X == -1));
 
             Board[destination.X, destination.Y] = CurrentTurnBlack;
             if (source.X != -1)
@@ -166,7 +160,7 @@ namespace Go
 
             CurrentTurnBlack = !CurrentTurnBlack;
 
-            string newBoardString = ToString(true);
+            string newBoardString = ToString();
             if (BoardCounts.ContainsKey(newBoardString))
             {
                 BoardCounts[newBoardString]++;
@@ -194,21 +188,8 @@ namespace Go
         /// <summary>
         /// Get a string representation of the given board.
         /// </summary>
-        /// <remarks>The resulting string complies with the Forsyth–Edwards Notation standard</remarks>
-        public override string ToString()
-        {
-            return ToString(false);
-        }
-
-        /// <summary>
-        /// Get a string representation of the given board.
-        /// </summary>
-        /// <remarks>
-        /// The resulting string complies with the Forsyth–Edwards Notation standard,
-        /// unless <paramref name="appendCheckStatus"/> is <see langword="true"/>
-        /// </remarks>
         // TODO: Create new format to represent game as string
-        public string ToString(bool appendCheckStatus)
+        public string ToString()
         {
             StringBuilder result = new(90);  // TODO: Calculate max length of new format
 
@@ -217,8 +198,8 @@ namespace Go
                 int consecutiveNull = 0;
                 for (int x = 0; x < Board.GetLength(0); x++)
                 {
-                    bool? piece = Board[x, y];
-                    if (piece is null)
+                    bool? stone = Board[x, y];
+                    if (stone is null)
                     {
                         consecutiveNull++;
                     }
@@ -229,7 +210,7 @@ namespace Go
                             _ = result.Append(consecutiveNull);
                             consecutiveNull = 0;
                         }
-                        _ = result.Append(piece.Value ? 'b' : 'w');
+                        _ = result.Append(stone.Value ? 'b' : 'w');
                     }
                 }
                 if (consecutiveNull > 0)
@@ -248,33 +229,29 @@ namespace Go
         }
 
         /// <summary>
-        /// Convert Go Forsyth–Edwards Notation (SFEN) to a go game instance.
+        /// Convert a string representing a Go board to a go game instance.
         /// </summary>
         // TODO: Create new format to represent game as string
-        public static GoGame FromGoForsythEdwards(string forsythEdwards)
+        public static GoGame FromBoardString(string boardString)
         {
-            string[] fields = forsythEdwards.Split(' ');
+            string[] fields = boardString.Split(' ');
             if (fields.Length != 3)
             {
-                throw new FormatException("Go Forsyth–Edwards Notation requires 3 fields separated by spaces");
+                throw new FormatException("A valid board text state requires 3 fields separated by spaces");
             }
 
             string[] ranks = fields[0].Split('/');
-            if (ranks.Length is not 9 and not 5)
-            {
-                throw new FormatException("Board definitions must have 9 or 5 ranks separated by a forward slash");
-            }
 
-            bool minigo = ranks.Length == 5;
-            int maxIndex = minigo ? 4 : 8;
+            // TODO: Variable size
+            int maxIndex = 18;
 
-            bool?[,] board = minigo ? new bool?[5, 5] : new bool?[9, 9];
+            bool?[,] board = new bool?[19, 19];
             for (int r = 0; r < ranks.Length; r++)
             {
                 int fileIndex = 0;
-                foreach (char pieceChar in ranks[r])
+                foreach (char stoneChar in ranks[r])
                 {
-                    switch (pieceChar)
+                    switch (stoneChar)
                     {
                         case 'K':
                             board[fileIndex, maxIndex - r] = true;
@@ -325,22 +302,23 @@ namespace Go
                             board[fileIndex, maxIndex - r] = false;
                             break;
                         default:
-                            if (pieceChar is > '0' and <= '9')
+                            if (stoneChar is > '0' and <= '9')
                             {
                                 // char - '0' gets numeric value of ASCII number
                                 // Leaves the specified number of squares as null
-                                fileIndex += pieceChar - '0' - 1; 
+                                fileIndex += stoneChar - '0' - 1; 
                                 // Subtract 1 as fileIndex gets incremented by 1 as well later
                             }
                             else
                             {
-                                throw new FormatException($"{pieceChar} is not a valid piece character");
+                                throw new FormatException($"{stoneChar} is not a valid stone character");
                             }
                             break;
                     }
                     fileIndex++;
                 }
-                if ((fileIndex != 9 && !minigo) || (fileIndex != 5 && minigo))
+                // TODO: Check size is consistent
+                if (false)
                 {
                     throw new FormatException("Each rank in a board definition must contain definitions for 9 or 5 files");
                 }
@@ -349,12 +327,12 @@ namespace Go
             bool currentTurnBlack = fields[1] == "b" || (fields[1] == "w" ? false
                 : throw new FormatException("Current turn specifier must be either w or b"));
 
-            Dictionary<Type, int> blackPieceDrops = new();
-            Dictionary<Type, int> whitePieceDrops = new();
+            Dictionary<Type, int> blackStoneDrops = new();
+            Dictionary<Type, int> whiteStoneDrops = new();
 
-            // Go Forsyth–Edwards doesn't define what the previous moves were, so they moves list starts empty
+            // Board string doesn't define what the previous moves were, so they moves list starts empty
             return new GoGame(board, currentTurnBlack, false,  // TODO: Format should contain field for whether game is over
-                new(), new(), new(), blackPieceDrops, whitePieceDrops, new(), null, null);
+                new(), new(), new(), blackStoneDrops, whiteStoneDrops, new(), null, null);
         }
     }
 }
