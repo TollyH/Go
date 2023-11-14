@@ -87,10 +87,9 @@ namespace Go
         }
 
         /// <summary>
-        /// Determine whether a drop of the given stone type to the given destination is valid or not.
+        /// Determine whether a placement of a stone to the given destination is valid or not.
         /// </summary>
-        // TODO: Remove drop type, add suicide check
-        public bool IsDropPossible(Type dropType, Point destination)
+        public bool IsPlacementPossible(Point destination)
         {
             if (destination.X < 0 || destination.Y < 0
                 || destination.X >= Board.GetLength(0) || destination.Y >= Board.GetLength(1))
@@ -108,40 +107,31 @@ namespace Go
         }
 
         /// <summary>
-        /// Move a stone on the board from a <paramref name="source"/> coordinate to a <paramref name="destination"/> coordinate.
-        /// To perform a stone drop, set <paramref name="source"/> to a value within <see cref="StoneDropSources"/>.
+        /// Place a stone of the current player's colour on the board at the specified <paramref name="destination"/> coordinate.
         /// </summary>
-        /// <param name="doPromotion">
-        /// If a stone can be promoted, should it be? <see langword="null"/> means the user should be prompted.
-        /// </param>
         /// <param name="updateMoveText">
         /// Whether the move should update the game move text and update <see cref="PreviousGameState"/>. This should usually be <see langword="true"/>,
         /// but may be set to <see langword="false"/> for performance optimisations in clone games for analysis.
         /// </param>
         /// <returns><see langword="true"/> if the move was valid and executed, <see langword="false"/> otherwise</returns>
         /// <remarks>This method will check if the move is completely valid, unless <paramref name="forceMove"/> is <see langword="true"/>. No other validity checks are required.</remarks>
-        // TODO: Replace with new drop stone method
-        public bool MoveStone(Point source, Point destination, bool forceMove = false, bool updateMoveText = true)
+        public bool PlaceStone(Point destination, bool forceMove = false, bool updateMoveText = true)
         {
-            if (!forceMove && (GameOver || !IsDropPossible(null, destination)))
+            if (!forceMove && (GameOver || !IsPlacementPossible(destination)))
             {
                 return false;
             }
 
-            // Used for generating new move text and move undoing
-            GoGame? oldGame = null;
             if (updateMoveText)
             {
-                oldGame = Clone();
-                PreviousGameState = oldGame;
+                // Used for move undoing
+                PreviousGameState = Clone();
             }
             Moves.Add(destination);
 
             Board[destination.X, destination.Y] = CurrentTurnBlack;
-            if (source.X != -1)
-            {
-                Board[source.X, source.Y] = null;
-            }
+
+            // TODO: Capture check
 
             CurrentTurnBlack = !CurrentTurnBlack;
             _ = PreviousBoards.Add(ToString());
@@ -149,12 +139,7 @@ namespace Go
             if (updateMoveText)
             {
                 string newMove = CurrentTurnBlack ? "B" : "W";
-
-                newMove += source.X == -1 ? '*'
-                    : oldGame.Board[destination.X, destination.Y] is not null ? 'x'
-                    : '-';
                 newMove += $"{Board.GetLength(0) - destination.X}{Board.GetLength(1) - destination.Y}";
-
                 MoveText.Add(newMove);
             }
 

@@ -101,7 +101,6 @@ namespace Go
 
             // TODO: Upon game over, show who surrounded territory belongs to with smaller dots
 
-            // TODO: No source and destination now, just destination
             if (game.Moves.Count > 0)
             {
                 System.Drawing.Point lastMoveDestination = game.Moves[^1];
@@ -118,7 +117,6 @@ namespace Go
 
             }
 
-            // TODO: No source and destination now, just destination
             if (currentBestMove is not null)
             {
                 Rectangle bestMoveDstHighlight = new()
@@ -222,7 +220,7 @@ namespace Go
             foreach (System.Drawing.Point destination in bestMove.Value.BestLine)
             {
                 // TODO: Use new drop stone method
-                _ = moveStringGenerator.MoveStone(destination, destination, true);
+                _ = moveStringGenerator.PlaceStone(destination, true);
                 convertedBestLine += " " + moveStringGenerator.MoveText[^1];
             }
             toUpdate.ToolTip = convertedBestLine.Trim();
@@ -256,7 +254,7 @@ namespace Go
                 }
 
                 // TODO: Replace with new drop stone method
-                _ = game.MoveStone(bestMove.Value.Destination, bestMove.Value.Destination, true);
+                _ = game.PlaceStone(bestMove.Value.Destination, true);
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
                 if (config.UpdateEvalAfterBot)
@@ -331,7 +329,7 @@ namespace Go
                 }
                 System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
                 // TODO: Replace with new drop stone method
-                bool success = game.MoveStone(destination, destination);
+                bool success = game.PlaceStone(destination);
                 if (success)
                 {
                     currentBestMove = null;

@@ -87,13 +87,13 @@ namespace Go
                 for (int y = 0; y < game.Board.GetLength(1); y++)
                 {
                     Point pt = new(x, y);
-                    if (game.IsDropPossible(null, pt))
+                    if (game.IsPlacementPossible(pt))
                     {
                         remainingThreads++;
-                        Point thisDropPoint = pt;
+                        Point thisPlacement = pt;
                         GoGame gameClone = game.Clone();
-                        List<Point> thisLine = new() { thisDropPoint };
-                        _ = gameClone.MoveStone(thisDropPoint, thisDropPoint, true, updateMoveText: false);
+                        List<Point> thisLine = new() { thisPlacement };
+                        _ = gameClone.PlaceStone(thisPlacement, true, updateMoveText: false);
 
                         Thread processThread = new(() =>
                         {
@@ -102,7 +102,7 @@ namespace Go
                             // Don't include default value in results
                             if (bestSubMove is not null)
                             {
-                                possibleMoves.Add(new PossibleMove(thisDropPoint,
+                                possibleMoves.Add(new PossibleMove(thisPlacement,
                                     bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
                             }
                             remainingThreads--;
@@ -161,11 +161,11 @@ namespace Go
                 for (int y = 0; y < game.Board.GetLength(1); y++)
                 {
                     Point pt = new(x, y);
-                    if (game.IsDropPossible(null, pt))
+                    if (game.IsPlacementPossible(pt))
                     {
                         GoGame gameClone = game.Clone();
                         List<Point> newLine = new(currentLine) { pt };
-                        _ = gameClone.MoveStone(pt, pt, true, updateMoveText: false);
+                        _ = gameClone.PlaceStone(pt, true, updateMoveText: false);
                         PossibleMove? potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
                         if (potentialMove is null)
                         {
