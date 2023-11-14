@@ -139,7 +139,7 @@ namespace Go
             if (updateMoveText)
             {
                 string newMove = CurrentTurnBlack ? "B" : "W";
-                newMove += $"{Board.GetLength(0) - destination.X}{Board.GetLength(1) - destination.Y}";
+                newMove += $"{Board.GetLength(0) - destination.X}-{Board.GetLength(1) - destination.Y}";
                 MoveText.Add(newMove);
             }
 
