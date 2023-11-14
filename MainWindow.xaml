@@ -35,7 +35,7 @@
                 <MenuItem Header="Customise..." Click="CustomiseItem_Click"/>
             </MenuItem>
         </Menu>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="12*"/>

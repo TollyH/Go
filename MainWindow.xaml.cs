@@ -119,9 +119,7 @@ namespace Go
             }
 
             // TODO: No source and destination now, just destination
-            if (currentBestMove is not null
-                // Prevent cases where there are no valid moves highlighting (0, 0)
-                && currentBestMove.Value.Source != currentBestMove.Value.Destination)
+            if (currentBestMove is not null)
             {
                 Rectangle bestMoveDstHighlight = new()
                 {
@@ -217,26 +215,14 @@ namespace Go
                 return;
             }
 
-            if ((bestMove.Value.BlackMateLocated && !bestMove.Value.WhiteMateLocated)
-                || bestMove.Value.EvaluatedFutureValue == double.NegativeInfinity)
-            {
-                toUpdate.Content = $"-M{bestMove.Value.DepthToBlackMate}";
-            }
-            else if ((bestMove.Value.WhiteMateLocated && !bestMove.Value.BlackMateLocated)
-                || bestMove.Value.EvaluatedFutureValue == double.PositiveInfinity)
-            {
-                toUpdate.Content = $"+M{bestMove.Value.DepthToWhiteMate}";
-            }
-            else
-            {
-                toUpdate.Content = bestMove.Value.EvaluatedFutureValue.ToString("+0.00;-0.00;0.00");
-            }
+            toUpdate.Content = bestMove.Value.EvaluatedFutureValue.ToString("+0.00;-0.00;0.00");
 
             string convertedBestLine = "";
             GoGame moveStringGenerator = game.Clone();
-            foreach ((System.Drawing.Point source, System.Drawing.Point destination, bool doPromotion) in bestMove.Value.BestLine)
+            foreach (System.Drawing.Point destination in bestMove.Value.BestLine)
             {
-                _ = moveStringGenerator.MoveStone(source, destination, true, doPromotion);
+                // TODO: Use new drop stone method
+                _ = moveStringGenerator.MoveStone(destination, destination, true);
                 convertedBestLine += " " + moveStringGenerator.JapaneseMoveText[^1];
             }
             toUpdate.ToolTip = convertedBestLine.Trim();
@@ -245,11 +231,10 @@ namespace Go
         /// <summary>
         /// Get the best move according to either the built-in or external engine, depending on configuration
         /// </summary>
-        private async Task<BoardAnalysis.PossibleMove> GetEngineMove(CancellationToken cancellationToken)
+        private async Task<BoardAnalysis.PossibleMove?> GetEngineMove(CancellationToken cancellationToken)
         {
-            BoardAnalysis.PossibleMove? bestMove = null;
-            bestMove ??= await BoardAnalysis.EstimateBestPossibleMove(game, 4, cancellationToken);
-            return bestMove.Value;
+            BoardAnalysis.PossibleMove? bestMove = await BoardAnalysis.EstimateBestPossibleMove(game, 4, cancellationToken);
+            return bestMove;
         }
 
         /// <summary>
@@ -264,14 +249,14 @@ namespace Go
                 {
                     UpdateEvaluationMeter(null, game.CurrentTurnBlack);
                 }
-                BoardAnalysis.PossibleMove bestMove = await GetEngineMove(cancellationToken);
-                if (cancellationToken.IsCancellationRequested)
+                BoardAnalysis.PossibleMove? bestMove = await GetEngineMove(cancellationToken);
+                if (bestMove is null || cancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
 
                 // TODO: Replace with new drop stone method
-                _ = game.MoveStone(bestMove.Source, bestMove.Destination, true);
+                _ = game.MoveStone(bestMove.Value.Destination, bestMove.Value.Destination, true);
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
                 if (config.UpdateEvalAfterBot)
@@ -396,7 +381,7 @@ namespace Go
             UpdateGameDisplay();
 
             CancellationToken cancellationToken = cancelMoveComputation.Token;
-            BoardAnalysis.PossibleMove bestMove = await GetEngineMove(cancellationToken);
+            BoardAnalysis.PossibleMove? bestMove = await GetEngineMove(cancellationToken);
             
             if (cancellationToken.IsCancellationRequested)
             {

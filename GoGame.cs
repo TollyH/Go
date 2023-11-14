@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Go
 {
-    public class GoGame
+    public sealed class GoGame
     {
         /// <summary>
         /// <see langword="null"/> = no stone,
@@ -189,7 +189,7 @@ namespace Go
         /// Get a string representation of the given board.
         /// </summary>
         // TODO: Create new format to represent game as string
-        public string ToString()
+        public override string ToString()
         {
             StringBuilder result = new(90);  // TODO: Calculate max length of new format
 

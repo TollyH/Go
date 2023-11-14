@@ -32,31 +32,16 @@ namespace Go
             return inHandTotal + game.Board.OfType<bool>().Sum(p => p ? 1 : -1);
         }
 
-        // TODO: Remove unnecessary data
         public readonly struct PossibleMove
         {
-            public Point Source { get; }
             public Point Destination { get; }
             public double EvaluatedFutureValue { get; }
-            public bool BlackMateLocated { get; }
-            public bool WhiteMateLocated { get; }
-            public int DepthToBlackMate { get; }
-            public int DepthToWhiteMate { get; }
-            public bool DoPromotion { get; }
-            public List<(Point, Point, bool)> BestLine { get;  }
+            public List<Point> BestLine { get; }
 
-            public PossibleMove(Point source, Point destination, double evaluatedFutureValue,
-                bool blackMateLocated, bool whiteMateLocated, int depthToBlackMate, int depthToWhiteMate,
-                bool doPromotion, List<(Point, Point, bool)> bestLine)
+            public PossibleMove(Point destination, double evaluatedFutureValue, List<Point> bestLine)
             {
-                Source = source;
                 Destination = destination;
                 EvaluatedFutureValue = evaluatedFutureValue;
-                BlackMateLocated = blackMateLocated;
-                WhiteMateLocated = whiteMateLocated;
-                DepthToBlackMate = depthToBlackMate;
-                DepthToWhiteMate = depthToWhiteMate;
-                DoPromotion = doPromotion;
                 BestLine = bestLine;
             }
         }
@@ -65,31 +50,24 @@ namespace Go
         /// Use <see cref="EvaluatePossibleMoves"/> to find the best possible move in the current state of the game
         /// </summary>
         /// <param name="maxDepth">The maximum number of half-moves in the future to search</param>
-        public static async Task<PossibleMove> EstimateBestPossibleMove(GoGame game, int maxDepth, CancellationToken cancellationToken)
+        public static async Task<PossibleMove?> EstimateBestPossibleMove(GoGame game, int maxDepth, CancellationToken cancellationToken)
         {
             PossibleMove[] moves = await EvaluatePossibleMoves(game, maxDepth, cancellationToken);
-            PossibleMove bestMove = new(default, default,
-                game.CurrentTurnBlack ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
+            PossibleMove? bestMove = null;
             foreach (PossibleMove potentialMove in moves)
             {
                 if (game.CurrentTurnBlack)
                 {
-                    if (bestMove.EvaluatedFutureValue == double.NegativeInfinity
-                        || (!bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated)
-                        || (!bestMove.WhiteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
-                        || (bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated
-                            && potentialMove.DepthToWhiteMate < bestMove.DepthToWhiteMate))
+                    if (bestMove is null || double.IsNegativeInfinity(bestMove.Value.EvaluatedFutureValue)
+                        || potentialMove.EvaluatedFutureValue > bestMove.Value.EvaluatedFutureValue)
                     {
                         bestMove = potentialMove;
                     }
                 }
                 else
                 {
-                    if (bestMove.EvaluatedFutureValue == double.PositiveInfinity
-                        || (!bestMove.BlackMateLocated && potentialMove.BlackMateLocated)
-                        || (!bestMove.BlackMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
-                        || (bestMove.BlackMateLocated && potentialMove.BlackMateLocated
-                            && potentialMove.DepthToBlackMate < bestMove.DepthToBlackMate))
+                    if (bestMove is null || double.IsPositiveInfinity(bestMove.Value.EvaluatedFutureValue)
+                        || potentialMove.EvaluatedFutureValue < bestMove.Value.EvaluatedFutureValue)
                     {
                         bestMove = potentialMove;
                     }
@@ -97,7 +75,7 @@ namespace Go
             }
             if (cancellationToken.IsCancellationRequested)
             {
-                return default;
+                return null;
             }
             return bestMove;
         }
@@ -128,19 +106,18 @@ namespace Go
                                 remainingThreads++;
                                 Point thisDropPoint = pt;
                                 GoGame gameClone = game.Clone();
-                                List<(Point, Point, bool)> thisLine = new() { (thisDropPoint, thisDropPoint, false) };
+                                List<Point> thisLine = new() { thisDropPoint };
                                 _ = gameClone.MoveStone(thisDropPoint, thisDropPoint, true, updateMoveText: false);
 
                                 Thread processThread = new(() =>
                                 {
-                                    PossibleMove bestSubMove = MinimaxMove(gameClone,
+                                    PossibleMove? bestSubMove = MinimaxMove(gameClone,
                                         double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, thisLine, cancellationToken);
                                     // Don't include default value in results
-                                    if (bestSubMove.Source != bestSubMove.Destination)
+                                    if (bestSubMove is not null)
                                     {
-                                        possibleMoves.Add(new PossibleMove(thisDropPoint, pt,
-                                            bestSubMove.EvaluatedFutureValue, bestSubMove.BlackMateLocated, bestSubMove.WhiteMateLocated,
-                                            bestSubMove.DepthToBlackMate, bestSubMove.DepthToWhiteMate, false, bestSubMove.BestLine));
+                                        possibleMoves.Add(new PossibleMove(thisDropPoint,
+                                            bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
                                     }
                                     remainingThreads--;
                                 });
@@ -166,8 +143,8 @@ namespace Go
             return possibleMoves.ToArray();
         }
 
-        private static PossibleMove MinimaxMove(GoGame game, double alpha, double beta, int depth, int maxDepth,
-            List<(Point, Point, bool)> currentLine, CancellationToken cancellationToken)
+        private static PossibleMove? MinimaxMove(GoGame game, double alpha, double beta, int depth, int maxDepth,
+            List<Point> currentLine, CancellationToken cancellationToken)
         {
             (_, Point lastMoveSrc, Point lastMoveDst, _, _) = game.Moves.Last();
             if (game.GameOver)
@@ -175,27 +152,24 @@ namespace Go
                 // TODO: Check if game is won and who by
                 if (false)
                 {
-                    return new PossibleMove(lastMoveSrc, lastMoveDst, double.NegativeInfinity, true, false, depth, 0, false,
-                        currentLine);
+                    return new PossibleMove(lastMoveDst, double.NegativeInfinity, currentLine);
                 }
                 else if (false)
                 {
-                    return new PossibleMove(lastMoveSrc, lastMoveDst, double.PositiveInfinity, false, true, 0, depth, false,
-                        currentLine);
+                    return new PossibleMove(lastMoveDst, double.PositiveInfinity, currentLine);
                 }
                 else
                 {
                     // Draw
-                    return new PossibleMove(lastMoveSrc, lastMoveDst, 0, false, false, 0, 0, false, currentLine);
+                    return new PossibleMove(lastMoveDst, 0, currentLine);
                 }
             }
             if (depth > maxDepth)
             {
-                return new PossibleMove(lastMoveSrc, lastMoveDst, CalculateGameValue(game), false, false, 0, 0, false, currentLine);
+                return new PossibleMove( lastMoveDst, CalculateGameValue(game), currentLine);
             }
 
-            PossibleMove bestMove = new(default, default,
-                game.CurrentTurnBlack ? double.NegativeInfinity : double.PositiveInfinity, false, false, 0, 0, false, new());
+            PossibleMove? bestMove = null;
 
             // TODO: Remove drop counts, just iterate whole board
             Dictionary<Type, int> dropCounts = game.CurrentTurnBlack ? game.BlackStoneDrops : game.WhiteStoneDrops;
@@ -211,54 +185,47 @@ namespace Go
                             if (game.IsDropPossible(dropType, pt))
                             {
                                 GoGame gameClone = game.Clone();
-                                Point dropPoint = pt;
-                                List<(Point, Point, bool)> newLine = new(currentLine) { (dropPoint, dropPoint, false) };
-                                _ = gameClone.MoveStone(dropPoint, dropPoint, true, updateMoveText: false);
-                                PossibleMove potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
+                                List<Point> newLine = new(currentLine) { pt };
+                                _ = gameClone.MoveStone(pt, pt, true, updateMoveText: false);
+                                PossibleMove? potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
+                                if (potentialMove is null)
+                                {
+                                    continue;
+                                }
                                 if (cancellationToken.IsCancellationRequested)
                                 {
                                     return bestMove;
                                 }
                                 if (game.CurrentTurnBlack)
                                 {
-                                    if (bestMove.EvaluatedFutureValue == double.NegativeInfinity
-                                        || (!bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated)
-                                        || (!bestMove.WhiteMateLocated && potentialMove.EvaluatedFutureValue > bestMove.EvaluatedFutureValue)
-                                        || (bestMove.WhiteMateLocated && potentialMove.WhiteMateLocated
-                                            && potentialMove.DepthToWhiteMate < bestMove.DepthToWhiteMate))
+                                    if (bestMove is null || double.IsNegativeInfinity(bestMove.Value.EvaluatedFutureValue)
+                                        || potentialMove.Value.EvaluatedFutureValue > bestMove.Value.EvaluatedFutureValue)
                                     {
-                                        bestMove = new PossibleMove(dropPoint, dropPoint, potentialMove.EvaluatedFutureValue,
-                                            potentialMove.BlackMateLocated, potentialMove.WhiteMateLocated,
-                                            potentialMove.DepthToBlackMate, potentialMove.DepthToWhiteMate, potentialMove.DoPromotion, potentialMove.BestLine);
+                                        bestMove = new PossibleMove(pt, potentialMove.Value.EvaluatedFutureValue, potentialMove.Value.BestLine);
                                     }
-                                    if (potentialMove.EvaluatedFutureValue >= beta && !bestMove.WhiteMateLocated)
+                                    if (potentialMove.Value.EvaluatedFutureValue >= beta)
                                     {
                                         return bestMove;
                                     }
-                                    if (potentialMove.EvaluatedFutureValue > alpha)
+                                    if (potentialMove.Value.EvaluatedFutureValue > alpha)
                                     {
-                                        alpha = potentialMove.EvaluatedFutureValue;
+                                        alpha = potentialMove.Value.EvaluatedFutureValue;
                                     }
                                 }
                                 else
                                 {
-                                    if (bestMove.EvaluatedFutureValue == double.PositiveInfinity
-                                        || (!bestMove.BlackMateLocated && potentialMove.BlackMateLocated)
-                                        || (!bestMove.BlackMateLocated && potentialMove.EvaluatedFutureValue < bestMove.EvaluatedFutureValue)
-                                        || (bestMove.BlackMateLocated && potentialMove.BlackMateLocated
-                                            && potentialMove.DepthToBlackMate < bestMove.DepthToBlackMate))
+                                    if (bestMove is null || double.IsPositiveInfinity(bestMove.Value.EvaluatedFutureValue)
+                                        || potentialMove.Value.EvaluatedFutureValue < bestMove.Value.EvaluatedFutureValue)
                                     {
-                                        bestMove = new PossibleMove(dropPoint, dropPoint, potentialMove.EvaluatedFutureValue,
-                                            potentialMove.BlackMateLocated, potentialMove.WhiteMateLocated,
-                                            potentialMove.DepthToBlackMate, potentialMove.DepthToWhiteMate, potentialMove.DoPromotion, potentialMove.BestLine);
+                                        bestMove = new PossibleMove(pt, potentialMove.Value.EvaluatedFutureValue, potentialMove.Value.BestLine);
                                     }
-                                    if (potentialMove.EvaluatedFutureValue <= alpha && !bestMove.BlackMateLocated)
+                                    if (potentialMove.Value.EvaluatedFutureValue <= alpha)
                                     {
                                         return bestMove;
                                     }
-                                    if (potentialMove.EvaluatedFutureValue < beta)
+                                    if (potentialMove.Value.EvaluatedFutureValue < beta)
                                     {
-                                        beta = potentialMove.EvaluatedFutureValue;
+                                        beta = potentialMove.Value.EvaluatedFutureValue;
                                     }
                                 }
                             }
