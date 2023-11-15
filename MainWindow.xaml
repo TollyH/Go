@@ -54,15 +54,12 @@
             </Viewbox>
             <Border Grid.Column="1" Grid.Row="1" BorderBrush="Black" BorderThickness="1">
                 <Grid>
-                    <Grid x:Name="goBoardBackground">
-                        <Ellipse x:Name="boardCenterDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
-                        <Ellipse x:Name="boardLeftUpperDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
-                        <Ellipse x:Name="boardLeftLowerDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
-                        <Ellipse x:Name="boardRightUpperDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
-                        <Ellipse x:Name="boardRightLowerDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
-                        <Rectangle x:Name="boardTemplateLineVertical" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Height="{Binding ActualHeight, ElementName=goGameCanvas, Mode=OneWay}" HorizontalAlignment="Right" Margin="0,0,-1,0" Width="2" Visibility="Collapsed"/>
-                        <Rectangle x:Name="boardTemplateLineHorizontal" Fill="#BF000000" StrokeThickness="0" Stroke="#BF000000" Width="{Binding ActualWidth, ElementName=goGameCanvas, Mode=OneWay}" VerticalAlignment="Bottom" Height="2" Margin="0,0,0,-1" Visibility="Collapsed"/>
-                    </Grid>
+                    <Ellipse x:Name="boardCenterDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                    <Ellipse x:Name="boardLeftUpperDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                    <Ellipse x:Name="boardLeftLowerDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                    <Ellipse x:Name="boardRightUpperDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                    <Ellipse x:Name="boardRightLowerDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
+                    <Grid x:Name="goBoardBackground"/>
                 </Grid>
             </Border>
             <Canvas Grid.Column="1" Grid.Row="1" x:Name="goGameCanvas" Margin="1"/>
