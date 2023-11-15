@@ -332,7 +332,7 @@ namespace Go
             else
             {
                 if (mousePos.X < 0 || mousePos.Y < 0
-                || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
+                    || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
                 {
                     return;
                 }
@@ -343,13 +343,19 @@ namespace Go
 
         private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            Point mousePos = Mouse.GetPosition(goGameCanvas);
+            if (mousePos.X < 0 || mousePos.Y < 0
+                || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
+            {
+                return;
+            }
             if (e.ChangedButton == MouseButton.Left)
             {
                 if (game.GameOver)
                 {
                     return;
                 }
-                System.Drawing.Point destination = GetCoordFromCanvasPoint(Mouse.GetPosition(goGameCanvas));
+                System.Drawing.Point destination = GetCoordFromCanvasPoint(mousePos);
                 bool success = game.PlaceStone(destination);
                 if (success)
                 {
@@ -363,12 +369,6 @@ namespace Go
             }
             else
             {
-                Point mousePos = Mouse.GetPosition(goGameCanvas);
-                if (mousePos.X < 0 || mousePos.Y < 0
-                || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
-                {
-                    return;
-                }
                 System.Drawing.Point onSquare = GetCoordFromCanvasPoint(mousePos);
                 if (mouseDownStartPoint is null || mouseDownStartPoint == onSquare)
                 {
