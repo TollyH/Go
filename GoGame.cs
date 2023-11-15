@@ -138,7 +138,8 @@ namespace Go
 
             if (updateMoveText)
             {
-                string newMove = CurrentTurnBlack ? "B" : "W";
+                // CurrentTurnBlack has already flipped at this point
+                string newMove = CurrentTurnBlack ? "W" : "B";
                 newMove += $"{Board.GetLength(0) - destination.X}-{Board.GetLength(1) - destination.Y}";
                 MoveText.Add(newMove);
             }
