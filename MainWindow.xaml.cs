@@ -58,6 +58,9 @@ namespace Go
             tileWidth = goGameCanvas.ActualWidth / game.Board.GetLength(0);
             tileHeight = goGameCanvas.ActualHeight / game.Board.GetLength(1);
 
+            blackCaptures.Content = game.BlackCaptures;
+            whiteCaptures.Content = game.WhiteCaptures;
+
             if (currentBestMove is null && !manuallyEvaluating)
             {
                 if (game.CurrentTurnBlack && !blackIsComputer)
@@ -76,6 +79,11 @@ namespace Go
                 Grid.SetRow(blackEvaluationView, 0);
                 Grid.SetColumn(whiteEvaluationView, 0);
                 Grid.SetRow(whiteEvaluationView, 2);
+
+                Grid.SetColumn(blackCapturesView, 0);
+                Grid.SetRow(blackCapturesView, 0);
+                Grid.SetColumn(whiteCapturesView, 2);
+                Grid.SetRow(whiteCapturesView, 2);
             }
             else
             {
@@ -83,6 +91,11 @@ namespace Go
                 Grid.SetRow(blackEvaluationView, 2);
                 Grid.SetColumn(whiteEvaluationView, 2);
                 Grid.SetRow(whiteEvaluationView, 0);
+
+                Grid.SetColumn(blackCapturesView, 2);
+                Grid.SetRow(blackCapturesView, 2);
+                Grid.SetColumn(whiteCapturesView, 0);
+                Grid.SetRow(whiteCapturesView, 0);
             }
 
             movesPanel.Children.Clear();

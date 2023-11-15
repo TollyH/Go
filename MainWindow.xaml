@@ -52,6 +52,12 @@
             <Viewbox x:Name="whiteEvaluationView" Grid.Column="2" Grid.Row="0">
                 <Label x:Name="whiteEvaluation" Content="?" Foreground="Navy" MouseUp="evaluation_MouseUp"/>
             </Viewbox>
+            <Viewbox x:Name="whiteCapturesView" Grid.Column="0" Grid.Row="0">
+                <Label x:Name="blackCaptures" Content="0" Foreground="Crimson"/>
+            </Viewbox>
+            <Viewbox x:Name="blackCapturesView" Grid.Column="2" Grid.Row="2">
+                <Label x:Name="whiteCaptures" Content="0" Foreground="Crimson"/>
+            </Viewbox>
             <Border Grid.Column="1" Grid.Row="1" BorderBrush="Black" BorderThickness="1">
                 <Grid>
                     <Ellipse x:Name="boardCenterDot" Width="12" Height="12" Fill="#BF000000" StrokeThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,-6,-6" Visibility="Collapsed"/>
