@@ -58,6 +58,34 @@ namespace Go
                     }
                 }
             }
+
+            goBoardBackground.Children.Clear();
+
+            for (int x = 0; x < Board.GetLength(0); x++)
+            {
+                _ = goBoardBackground.Children.Add(new Rectangle()
+                {
+                    Margin = new Thickness((tileWidth * x) + (tileWidth / 2), 0, 0, -1),
+                    Fill = new SolidColorBrush(Color.FromArgb(191, 0, 0, 0)),
+                    StrokeThickness = 0,
+                    Height = goGameCanvas.ActualHeight - tileHeight,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Width = 2
+                });
+            }
+
+            for (int y = 0; y < Board.GetLength(1); y++)
+            {
+                _ = goBoardBackground.Children.Add(new Rectangle()
+                {
+                    Margin = new Thickness(0, (tileHeight * y) + (tileHeight / 2), -1, 0),
+                    Fill = new SolidColorBrush(Color.FromArgb(191, 0, 0, 0)),
+                    StrokeThickness = 0,
+                    Width = goGameCanvas.ActualWidth - tileWidth,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Height = 2
+                });
+            }
         }
 
         private void startButton_Click(object sender, RoutedEventArgs e)
