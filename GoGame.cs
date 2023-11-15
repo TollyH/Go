@@ -7,6 +7,11 @@ namespace Go
 {
     public sealed class GoGame
     {
+        public static readonly Point[] Liberties = new Point[4]
+        {
+            new(-1, 0), new(1, 0), new(0, -1), new(0, 1)
+        };
+
         /// <summary>
         /// <see langword="null"/> = no stone,
         /// <see langword="true"/> = black stone,
@@ -21,8 +26,14 @@ namespace Go
         public List<Point> Moves { get; }
         public List<string> MoveText { get; }
         public GoGame? PreviousGameState { get; private set; }
-        public int BlackCaptures { get; }
-        public int WhiteCaptures { get; }
+        /// <summary>
+        /// The number of captures black has made (i.e. the number of white stones removed)
+        /// </summary>
+        public int BlackCaptures { get; set; }
+        /// <summary>
+        /// The number of captures white has made (i.e. the number of black stones removed)
+        /// </summary>
+        public int WhiteCaptures { get; set; }
 
         // Used to detect repetition
         public HashSet<string> PreviousBoards { get; }
@@ -87,6 +98,99 @@ namespace Go
         }
 
         /// <summary>
+        /// Get a list of stones on the board that have been captured and need to be removed.
+        /// </summary>
+        public Point[] GetSurroundedStones()
+        {
+            List<Point> surroundedStones = new();
+            HashSet<Point> scannedPoints = new();
+            for (int x = 0; x < Board.GetLength(0); x++)
+            {
+                for (int y = 0; y < Board.GetLength(1); y++)
+                {
+                    Point startPoint = new(x, y);
+                    bool? startingColour = Board[x, y];
+                    if (startingColour is null || scannedPoints.Contains(startPoint))
+                    {
+                        continue;
+                    }
+                    // The current group is points of the same colour that are connected to the starting stone
+                    List<Point> currentGroup = new() { startPoint };
+                    // Will be set to false if any empty liberties are found surrounding the current group
+                    bool fullySurrounded = true;
+                    Queue<Point> pointsQueue = new();
+                    pointsQueue.Enqueue(startPoint);
+                    while (pointsQueue.TryDequeue(out Point pt))
+                    {
+                        if (!scannedPoints.Add(pt))
+                        {
+                            // Skip already scanned points
+                            continue;
+                        }
+
+                        // Scan surrounding liberties
+                        foreach (Point diff in Liberties)
+                        {
+                            Point adjPoint = new(pt.X + diff.X, pt.Y + diff.Y);
+                            if (adjPoint.X < 0 || adjPoint.Y < 0
+                                || adjPoint.X >= Board.GetLength(0) || adjPoint.Y >= Board.GetLength(1))
+                            {
+                                // Out of bounds
+                                continue;
+                            }
+
+                            bool? adjColour = Board[adjPoint.X, adjPoint.Y];
+                            if (adjColour is null)
+                            {
+                                // If there is an empty liberty surrounding the current group, it cannot be a capture
+                                fullySurrounded = false;
+                            }
+                            else if (adjColour == startingColour)
+                            {
+                                // If the surrounding piece is the same colour as the group we're scanning,
+                                // add it to the group and scan its surroundings too
+                                currentGroup.Add(adjPoint);
+                                pointsQueue.Enqueue(adjPoint);
+                            }
+                        }
+                    }
+                    if (fullySurrounded)
+                    {
+                        surroundedStones.AddRange(currentGroup);
+                    }
+                }
+            }
+            return surroundedStones.ToArray();
+        }
+
+        /// <summary>
+        /// Remove fully surrounded stones from the board.
+        /// </summary>
+        /// <returns>The number of black and white stones removed respectively.</returns>
+        public (int RemovedBlack, int RemovedWhite) RemoveSurroundedStones()
+        {
+            int removedBlack = 0;
+            int removedWhite = 0;
+            foreach (Point coord in GetSurroundedStones())
+            {
+                bool? stone = Board[coord.X, coord.Y];
+                if (stone is not null)
+                {
+                    if (stone.Value)
+                    {
+                        removedBlack++;
+                    }
+                    else
+                    {
+                        removedWhite++;
+                    }
+                }
+                Board[coord.X, coord.Y] = null;
+            }
+            return (removedBlack, removedWhite);
+        }
+
+        /// <summary>
         /// Determine whether a placement of a stone to the given destination is valid or not.
         /// </summary>
         public bool IsPlacementPossible(Point destination)
@@ -131,7 +235,9 @@ namespace Go
 
             Board[destination.X, destination.Y] = CurrentTurnBlack;
 
-            // TODO: Capture check
+            (int removedBlack, int removedWhite) = RemoveSurroundedStones();
+            BlackCaptures += removedWhite;
+            WhiteCaptures += removedBlack;
 
             CurrentTurnBlack = !CurrentTurnBlack;
             _ = PreviousBoards.Add(ToString());
