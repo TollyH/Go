@@ -222,9 +222,11 @@ namespace Go
                 return false;
             }
 
-            // TODO: Go drop rules
-
-            return true;
+            // Temporarily set the piece at the destination to run capture check to check for suicide
+            Board[destination.X, destination.Y] = CurrentTurnBlack;
+            bool suicide = GetSurroundedStones().Any(s => Board[s.X, s.Y] == CurrentTurnBlack);
+            Board[destination.X, destination.Y] = null;
+            return !suicide;
         }
 
         /// <summary>
