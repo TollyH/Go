@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Text;
 
 namespace Go
@@ -104,6 +105,8 @@ namespace Go
         {
             List<Point> surroundedStones = new();
             HashSet<Point> scannedPoints = new();
+            bool anyBlackCaptured = false;
+            bool anyWhiteCaptured = false;
             for (int x = 0; x < Board.GetLength(0); x++)
             {
                 for (int y = 0; y < Board.GetLength(1); y++)
@@ -156,9 +159,23 @@ namespace Go
                     }
                     if (fullySurrounded)
                     {
+                        if (startingColour.Value)
+                        {
+                            anyBlackCaptured = true;
+                        }
+                        else
+                        {
+                            anyWhiteCaptured = true;
+                        }
                         surroundedStones.AddRange(currentGroup);
                     }
                 }
+            }
+            if (anyBlackCaptured && anyWhiteCaptured)
+            {
+                // If the last move caused both black and white pieces to be apparently captured,
+                // stop the pieces of the colour who's turn it was from being captured
+                return surroundedStones.Where(s => Board[s.X, s.Y] != CurrentTurnBlack).ToArray();
             }
             return surroundedStones.ToArray();
         }
