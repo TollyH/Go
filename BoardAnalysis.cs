@@ -10,6 +10,11 @@ namespace Go
 {
     public static class BoardAnalysis
     {
+        public static readonly Point[] Liberties = new Point[4]
+        {
+            new(-1, 0), new(1, 0), new(0, -1), new(0, 1)
+        };
+
         /// <summary>
         /// Calculate the value of the given game based on the stones on the board and in hand
         /// </summary>
@@ -22,6 +27,88 @@ namespace Go
         {
             double inHandTotal = 0;
             return inHandTotal + game.Board.OfType<bool>().Sum(p => p ? 1 : -1);
+        }
+
+        /// <summary>
+        /// Get the list of stones on a board that have been captured and need to be removed.
+        /// </summary>
+        public static Point[] GetSurroundedStones(bool?[,] board, bool currentTurnBlack)
+        {
+            List<Point> surroundedStones = new();
+            HashSet<Point> scannedPoints = new();
+            bool anyBlackCaptured = false;
+            bool anyWhiteCaptured = false;
+            for (int x = 0; x < board.GetLength(0); x++)
+            {
+                for (int y = 0; y < board.GetLength(1); y++)
+                {
+                    Point startPoint = new(x, y);
+                    bool? startingColour = board[x, y];
+                    if (startingColour is null || scannedPoints.Contains(startPoint))
+                    {
+                        continue;
+                    }
+                    // The current group is points of the same colour that are connected to the starting stone
+                    List<Point> currentGroup = new() { startPoint };
+                    // Will be set to false if any empty liberties are found surrounding the current group
+                    bool fullySurrounded = true;
+                    Queue<Point> pointsQueue = new();
+                    pointsQueue.Enqueue(startPoint);
+                    while (pointsQueue.TryDequeue(out Point pt))
+                    {
+                        if (!scannedPoints.Add(pt))
+                        {
+                            // Skip already scanned points
+                            continue;
+                        }
+
+                        // Scan surrounding liberties
+                        foreach (Point diff in Liberties)
+                        {
+                            Point adjPoint = new(pt.X + diff.X, pt.Y + diff.Y);
+                            if (adjPoint.X < 0 || adjPoint.Y < 0
+                                || adjPoint.X >= board.GetLength(0) || adjPoint.Y >= board.GetLength(1))
+                            {
+                                // Out of bounds
+                                continue;
+                            }
+
+                            bool? adjColour = board[adjPoint.X, adjPoint.Y];
+                            if (adjColour is null)
+                            {
+                                // If there is an empty liberty surrounding the current group, it cannot be a capture
+                                fullySurrounded = false;
+                            }
+                            else if (adjColour == startingColour)
+                            {
+                                // If the surrounding piece is the same colour as the group we're scanning,
+                                // add it to the group and scan its surroundings too
+                                currentGroup.Add(adjPoint);
+                                pointsQueue.Enqueue(adjPoint);
+                            }
+                        }
+                    }
+                    if (fullySurrounded)
+                    {
+                        if (startingColour.Value)
+                        {
+                            anyBlackCaptured = true;
+                        }
+                        else
+                        {
+                            anyWhiteCaptured = true;
+                        }
+                        surroundedStones.AddRange(currentGroup);
+                    }
+                }
+            }
+            if (anyBlackCaptured && anyWhiteCaptured)
+            {
+                // If the last move caused both black and white pieces to be apparently captured,
+                // stop the pieces of the colour who's turn it was from being captured
+                return surroundedStones.Where(s => board[s.X, s.Y] != currentTurnBlack).ToArray();
+            }
+            return surroundedStones.ToArray();
         }
 
         public readonly struct PossibleMove
