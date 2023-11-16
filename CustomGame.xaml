@@ -42,6 +42,12 @@
                 <Label Content="Click on Board to Place Stone" Margin="5,5,5,1" Padding="0,0,0,0" FontSize="14"/>
                 <Label Content="Left Click = Black, Right Click = White" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
                 <Separator/>
+                <Label Content="Board Dimensions" Margin="5" Padding="0,0,0,0" FontSize="14"/>
+                <Label x:Name="boardWidthHeader" Content="Width (19)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
+                <Slider x:Name="boardWidthSlider" Margin="5,1,5,5" Minimum="2" Maximum="50" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="19" ValueChanged="BoardSlider_ValueChanged"/>
+                <Label x:Name="boardHeightHeader" Content="Height (19)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
+                <Slider x:Name="boardHeightSlider" Margin="5,1,5,5" Minimum="2" Maximum="50" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="19" ValueChanged="BoardSlider_ValueChanged"/>
+                <Separator/>
                 <Label Content="Current Turn" Margin="5" Padding="0,0,0,0" FontSize="14"/>
                 <Grid>
                     <RadioButton x:Name="turnSelectBlack" Margin="5,2,5,2" Content="Black" GroupName="CurrentTurn" IsChecked="True"/>

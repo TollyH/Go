@@ -28,7 +28,6 @@ namespace Go
 
             InitializeComponent();
 
-            // TODO: Customizable board size (with UI)
             Board = new bool?[19, 19];
         }
 
@@ -154,6 +153,29 @@ namespace Go
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            UpdateBoard();
+        }
+
+        private void BoardSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+            int newWidth = (int)boardWidthSlider.Value;
+            int newHeight = (int)boardHeightSlider.Value;
+            boardWidthHeader.Content = $"Width ({newWidth})";
+            boardHeightHeader.Content = $"Height ({newHeight})";
+
+            bool?[,] newBoard = new bool?[newWidth, newHeight];
+            for (int x = 0; x < newWidth && x < Board.GetLength(0); x++)
+            {
+                for (int y = 0; y < newHeight && y < Board.GetLength(1); y++)
+                {
+                    newBoard[x, y] = Board[x, y];
+                }
+            }
+            Board = newBoard;
             UpdateBoard();
         }
     }
