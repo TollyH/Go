@@ -55,8 +55,11 @@ namespace Go
 
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
 
-            tileWidth = goGameCanvas.ActualWidth / game.Board.GetLength(0);
-            tileHeight = goGameCanvas.ActualHeight / game.Board.GetLength(1);
+            int boardWidth = game.Board.GetLength(0);
+            int boardHeight = game.Board.GetLength(1);
+
+            tileWidth = goGameCanvas.ActualWidth / boardWidth;
+            tileHeight = goGameCanvas.ActualHeight / boardHeight;
 
             blackCaptures.Content = game.BlackCaptures;
             whiteCaptures.Content = game.WhiteCaptures;
@@ -109,8 +112,8 @@ namespace Go
                 });
             }
 
-            int boardMaxY = game.Board.GetLength(1) - 1;
-            int boardMaxX = game.Board.GetLength(0) - 1;
+            int boardMaxY = boardHeight - 1;
+            int boardMaxX = boardWidth - 1;
 
             // TODO: Upon game over, show who surrounded territory belongs to with smaller dots
 
@@ -145,9 +148,9 @@ namespace Go
                     (boardFlipped ? boardMaxX - currentBestMove.Value.Destination.X : currentBestMove.Value.Destination.X) * tileWidth);
             }
 
-            for (int x = 0; x < game.Board.GetLength(0); x++)
+            for (int x = 0; x < boardWidth; x++)
             {
-                for (int y = 0; y < game.Board.GetLength(1); y++)
+                for (int y = 0; y < boardHeight; y++)
                 {
                     bool? stone = game.Board[x, y];
                     if (stone is not null)
@@ -201,7 +204,7 @@ namespace Go
 
             goBoardBackground.Children.Clear();
 
-            for (int x = 0; x < game.Board.GetLength(0); x++)
+            for (int x = 0; x < boardWidth; x++)
             {
                 _ = goBoardBackground.Children.Add(new Rectangle()
                 {
@@ -214,7 +217,7 @@ namespace Go
                 });
             }
 
-            for (int y = 0; y < game.Board.GetLength(1); y++)
+            for (int y = 0; y < boardHeight; y++)
             {
                 _ = goBoardBackground.Children.Add(new Rectangle()
                 {
@@ -225,6 +228,90 @@ namespace Go
                     VerticalAlignment = VerticalAlignment.Top,
                     Height = 2
                 });
+            }
+
+            if (boardWidth % 2 == 1 && boardHeight % 2 == 1)
+            {
+                boardCenterDot.Visibility = Visibility.Visible;
+                boardCenterDot.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f, (goGameCanvas.ActualHeight / 2f) - 7f);
+                boardDot5.Visibility = Visibility.Visible;
+                boardDot6.Visibility = Visibility.Visible;
+                boardDot7.Visibility = Visibility.Visible;
+                boardDot8.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                boardCenterDot.Visibility = Visibility.Collapsed;
+                boardDot5.Visibility = Visibility.Collapsed;
+                boardDot6.Visibility = Visibility.Collapsed;
+                boardDot7.Visibility = Visibility.Collapsed;
+                boardDot8.Visibility = Visibility.Collapsed;
+            }
+
+            if (boardWidth >= 13 && boardHeight >= 13)
+            {
+                boardDot1.Visibility = Visibility.Visible;
+                boardDot2.Visibility = Visibility.Visible;
+                boardDot3.Visibility = Visibility.Visible;
+                boardDot4.Visibility = Visibility.Visible;
+
+                boardDot1.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 3)) - (tileWidth / 2) - 7f,
+                    (tileHeight * (boardHeight - 3)) - (tileHeight / 2) - 7f);
+                boardDot2.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 3)) - (tileWidth / 2) - 7f,
+                    (tileHeight * 3) + (tileHeight / 2) - 7f);
+                boardDot3.Margin = new Thickness(0, 0, (tileWidth * 3) + (tileWidth / 2) - 7f,
+                    (tileHeight * (boardHeight - 3)) - (tileHeight / 2) - 7f);
+                boardDot4.Margin = new Thickness(0, 0, (tileWidth * 3) + (tileWidth / 2) - 7f,
+                    (tileHeight * 3) + (tileHeight / 2) - 7f);
+
+                boardDot5.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                    (tileHeight * (boardHeight - 3)) - (tileHeight / 2) - 7f);
+                boardDot6.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 3)) - (tileWidth / 2) - 7f,
+                    (goGameCanvas.ActualHeight / 2f) - 7f);
+                boardDot7.Margin = new Thickness(0, 0, (tileWidth * 3) + (tileWidth / 2) - 7f,
+                    (goGameCanvas.ActualHeight / 2f) - 7f);
+                boardDot8.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                    (tileHeight * 3) + (tileHeight / 2) - 7f);
+            }
+            else if (boardWidth >= 8 && boardHeight >= 8)
+            {
+                boardDot1.Visibility = Visibility.Visible;
+                boardDot2.Visibility = Visibility.Visible;
+                boardDot3.Visibility = Visibility.Visible;
+                boardDot4.Visibility = Visibility.Visible;
+                boardDot5.Visibility = Visibility.Visible;
+                boardDot6.Visibility = Visibility.Visible;
+                boardDot7.Visibility = Visibility.Visible;
+                boardDot8.Visibility = Visibility.Visible;
+
+                boardDot1.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 2)) - (tileWidth / 2) - 7f,
+                    (tileHeight * (boardHeight - 2)) - (tileHeight / 2) - 7f);
+                boardDot2.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 2)) - (tileWidth / 2) - 7f,
+                    (tileHeight * 2) + (tileHeight / 2) - 7f);
+                boardDot3.Margin = new Thickness(0, 0, (tileWidth * 2) + (tileWidth / 2) - 7f,
+                    (tileHeight * (boardHeight - 2)) - (tileHeight / 2) - 7f);
+                boardDot4.Margin = new Thickness(0, 0, (tileWidth * 2) + (tileWidth / 2) - 7f,
+                    (tileHeight * 2) + (tileHeight / 2) - 7f);
+
+                boardDot5.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                    (tileHeight * (boardHeight - 2)) - (tileHeight / 2) - 7f);
+                boardDot6.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 2)) - (tileWidth / 2) - 7f,
+                    (goGameCanvas.ActualHeight / 2f) - 7f);
+                boardDot7.Margin = new Thickness(0, 0, (tileWidth * 2) + (tileWidth / 2) - 7f,
+                    (goGameCanvas.ActualHeight / 2f) - 7f);
+                boardDot8.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                    (tileHeight * 2) + (tileHeight / 2) - 7f);
+            }
+            else
+            {
+                boardDot1.Visibility = Visibility.Collapsed;
+                boardDot2.Visibility = Visibility.Collapsed;
+                boardDot3.Visibility = Visibility.Collapsed;
+                boardDot4.Visibility = Visibility.Collapsed;
+                boardDot5.Visibility = Visibility.Collapsed;
+                boardDot6.Visibility = Visibility.Collapsed;
+                boardDot7.Visibility = Visibility.Collapsed;
+                boardDot8.Visibility = Visibility.Collapsed;
             }
         }
 
