@@ -209,6 +209,13 @@ namespace Go
 
             Board[coord.X, coord.Y] = Board[coord.X, coord.Y] is null ? e.ChangedButton == MouseButton.Left : null;
 
+            foreach (System.Drawing.Point stone in
+                BoardAnalysis.GetSurroundedStones(Board, e.ChangedButton == MouseButton.Left))
+            {
+                // Remove stones that would be captured as soon as game starts
+                Board[stone.X, stone.Y] = null;
+            }
+
             UpdateBoard();
         }
 
