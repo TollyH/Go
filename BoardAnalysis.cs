@@ -113,6 +113,9 @@ namespace Go
 
         public readonly struct PossibleMove
         {
+            /// <summary>
+            /// A pass is represented by a destination of (-1, -1)
+            /// </summary>
             public Point Destination { get; }
             public double EvaluatedFutureValue { get; }
             public List<Point> BestLine { get; }

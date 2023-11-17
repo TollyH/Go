@@ -34,6 +34,7 @@
                 <Separator/>
                 <MenuItem Header="Customise..." Click="CustomiseItem_Click"/>
             </MenuItem>
+            <MenuItem x:Name="passMenuItem" Header="_Pass Turn" Margin="2" Click="passMenuItem_OnClick"/>
         </Menu>
         <Grid Grid.Row="1" Grid.Column="0">
             <Grid.ColumnDefinitions>

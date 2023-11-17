@@ -19,6 +19,9 @@ namespace Go
         public bool CurrentTurnBlack { get; private set; }
         public bool GameOver { get; private set; }
 
+        /// <summary>
+        /// Passes are represented by a move at (-1, -1)
+        /// </summary>
         public List<Point> Moves { get; }
         public List<string> MoveText { get; }
         public GoGame? PreviousGameState { get; private set; }
@@ -143,6 +146,36 @@ namespace Go
             bool suicide = BoardAnalysis.GetSurroundedStones(clone.Board, CurrentTurnBlack).Any(s => Board[s.X, s.Y] == CurrentTurnBlack);
             bool repetition = PreviousBoards.Contains(clone.GetBoardString().ToString());
             return !suicide && !repetition;
+        }
+
+        /// <summary>
+        /// Pass the current turn to the next player without placing a stone.
+        /// If two passes occur in a row, the game ends.
+        /// </summary>
+        /// <param name="updateMoveText">
+        /// Whether the move should update the game move text and update <see cref="PreviousGameState"/>. This should usually be <see langword="true"/>,
+        /// but may be set to <see langword="false"/> for performance optimisations in clone games for analysis.
+        /// </param>
+        /// <returns>Whether or not the pass caused the game to end.</returns>
+        public bool PassTurn(bool updateMoveText = true)
+        {
+            if (updateMoveText)
+            {
+                // Used for move undoing
+                PreviousGameState = Clone();
+                string newMove = CurrentTurnBlack ? "BP" : "WP";
+                MoveText.Add(newMove);
+            }
+
+            Moves.Add(new Point(-1, -1));
+            CurrentTurnBlack = !CurrentTurnBlack;
+
+            if (Moves.Count >= 2 && Moves[^2].X == -1)
+            {
+                GameOver = true;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

@@ -52,6 +52,7 @@ namespace Go
         public void UpdateGameDisplay()
         {
             goGameCanvas.Children.Clear();
+            passMenuItem.IsEnabled = !game.GameOver;
 
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
 
@@ -117,7 +118,7 @@ namespace Go
 
             // TODO: Upon game over, show who surrounded territory belongs to with smaller dots
 
-            if (game.Moves.Count > 0)
+            if (game.Moves.Count > 0 && game.Moves[^1].X >= 0)
             {
                 System.Drawing.Point lastMoveDestination = game.Moves[^1];
 
@@ -601,6 +602,22 @@ namespace Go
                     game = game.PreviousGameState!;
                 }
                 UpdateGameDisplay();
+                await CheckComputerMove();
+            }
+        }
+
+        private async void passMenuItem_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (!game.GameOver && ((game.CurrentTurnBlack && !blackIsComputer) || (!game.CurrentTurnBlack && !whiteIsComputer)))
+            {
+                _ = game.PassTurn();
+
+                squareHighlights.Clear();
+                lineHighlights.Clear();
+                currentBestMove = null;
+                UpdateGameDisplay();
+                movesScroll.ScrollToBottom();
+                PushEndgameMessage();
                 await CheckComputerMove();
             }
         }
