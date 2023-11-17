@@ -165,6 +165,9 @@ namespace Go
             {
                 // Used for move undoing
                 PreviousGameState = Clone();
+                string newMove = CurrentTurnBlack ? "B" : "W";
+                newMove += $"{destination.X + 1}-{Board.GetLength(1) - destination.Y}";
+                MoveText.Add(newMove);
             }
             Moves.Add(destination);
 
@@ -176,14 +179,6 @@ namespace Go
 
             CurrentTurnBlack = !CurrentTurnBlack;
             _ = PreviousBoards.Add(GetBoardString().ToString());
-
-            if (updateMoveText)
-            {
-                // CurrentTurnBlack has already flipped at this point
-                string newMove = CurrentTurnBlack ? "W" : "B";
-                newMove += $"{Board.GetLength(0) - destination.X}-{Board.GetLength(1) - destination.Y}";
-                MoveText.Add(newMove);
-            }
 
             return true;
         }
