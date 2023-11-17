@@ -64,7 +64,7 @@
         <Button x:Name="importButton" Content="Load Board Text" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
         <Grid x:Name="importOverlay" Grid.ColumnSpan="2" Grid.Column="0" Grid.RowSpan="3" Background="White" Visibility="Collapsed">
             <Label Content="Enter a board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>
-            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b -"/>
+            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn 0/0 b"/>
             <Button x:Name="submitFenButton" Content="Submit" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" Width="64" Click="submitFenButton_Click"/>
             <Button x:Name="cancelFenButton" Content="Cancel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10,10,84,10" Width="64" Click="cancelFenButton_Click"/>
         </Grid>

@@ -188,34 +188,16 @@ namespace Go
         /// <summary>
         /// Get a string representation of the given board.
         /// </summary>
-        // TODO: Create new format to represent game as string
         public override string ToString()
         {
-            StringBuilder result = new(90);  // TODO: Calculate max length of new format
+            StringBuilder result = new();
 
             for (int y = Board.GetLength(1) - 1; y >= 0; y--)
             {
-                int consecutiveNull = 0;
                 for (int x = 0; x < Board.GetLength(0); x++)
                 {
                     bool? stone = Board[x, y];
-                    if (stone is null)
-                    {
-                        consecutiveNull++;
-                    }
-                    else
-                    {
-                        if (consecutiveNull > 0)
-                        {
-                            _ = result.Append(consecutiveNull);
-                            consecutiveNull = 0;
-                        }
-                        _ = result.Append(stone.Value ? 'b' : 'w');
-                    }
-                }
-                if (consecutiveNull > 0)
-                {
-                    _ = result.Append(consecutiveNull);
+                    _ = stone is null ? result.Append('n') : result.Append(stone.Value ? 'b' : 'w');
                 }
                 if (y > 0)
                 {
@@ -223,7 +205,13 @@ namespace Go
                 }
             }
 
-            _ = result.Append(CurrentTurnBlack ? " b" : " w");
+            _ = result.Append(' ').Append(BlackCaptures).Append('/').Append(WhiteCaptures)
+                .Append(CurrentTurnBlack ? " b" : " w");
+
+            if (GameOver)
+            {
+                _ = result.Append('!');
+            }
 
             return result.ToString();
         }
@@ -231,7 +219,6 @@ namespace Go
         /// <summary>
         /// Convert a string representing a Go board to a go game instance.
         /// </summary>
-        // TODO: Create new format to represent game as string
         public static GoGame FromBoardString(string boardString)
         {
             string[] fields = boardString.Split(' ');
@@ -241,95 +228,58 @@ namespace Go
             }
 
             string[] ranks = fields[0].Split('/');
+            int maxRankIndex = ranks.Length - 1;
 
-            // TODO: Variable size
-            int maxIndex = 18;
+            if (ranks.Length < 2)
+            {
+                throw new FormatException("A valid board must have at least 2 horizontal rows");
+            }
+            if (ranks[0].Length < 2)
+            {
+                throw new FormatException("A valid board must have at least 2 vertical columns");
+            }
 
-            bool?[,] board = new bool?[19, 19];
+            bool?[,] board = new bool?[ranks[0].Length, ranks.Length];
             for (int r = 0; r < ranks.Length; r++)
             {
                 int fileIndex = 0;
                 foreach (char stoneChar in ranks[r])
                 {
-                    switch (stoneChar)
+                    board[fileIndex, maxRankIndex - r] = stoneChar switch
                     {
-                        case 'K':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'G':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'S':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'R':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'B':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'N':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'L':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'P':
-                            board[fileIndex, maxIndex - r] = true;
-                            break;
-                        case 'k':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 'g':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 's':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 'r':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 'b':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 'n':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 'l':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        case 'p':
-                            board[fileIndex, maxIndex - r] = false;
-                            break;
-                        default:
-                            if (stoneChar is > '0' and <= '9')
-                            {
-                                // char - '0' gets numeric value of ASCII number
-                                // Leaves the specified number of squares as null
-                                fileIndex += stoneChar - '0' - 1; 
-                                // Subtract 1 as fileIndex gets incremented by 1 as well later
-                            }
-                            else
-                            {
-                                throw new FormatException($"{stoneChar} is not a valid stone character");
-                            }
-                            break;
-                    }
+                        'b' => true,
+                        'w' => false,
+                        'n' => null,
+                        _ => throw new FormatException($"{stoneChar} is not a valid stone character"),
+                    };
                     fileIndex++;
                 }
-                // TODO: Check size is consistent
-                if (false)
+                if (fileIndex != ranks[0].Length)
                 {
-                    throw new FormatException("Each rank in a board definition must contain definitions for 9 or 5 files");
+                    throw new FormatException("Each row in the board must be the same length.");
                 }
             }
 
-            bool currentTurnBlack = fields[1] == "b" || (fields[1] == "w" ? false
-                : throw new FormatException("Current turn specifier must be either w or b"));
+            string[] captures = fields[1].Split('/');
+            if (captures.Length != 2)
+            {
+                throw new FormatException("Captures field must contain two numbers separated by a slash");
+            }
+            if (!int.TryParse(captures[0], out int blackCaptures) || !int.TryParse(captures[1], out int whiteCaptures))
+            {
+                throw new FormatException("Captures field must contain two numbers separated by a slash");
+            }
 
-            // Board string doesn't define what the previous moves were, so they moves list starts empty
-            return new GoGame(board, currentTurnBlack, false,  // TODO: Format should contain field for whether game is over
-                new List<Point>(), new List<string>(), 0, 0,  // TODO: Format should contain field for number of captures
+            if (fields[2].Length != 1 && (fields[2].Length != 2 || fields[2][1] != '!'))
+            {
+                throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark");
+            }
+            bool currentTurnBlack = fields[2][0] == 'b' || (fields[2][0] == 'w' ? false
+                : throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark"));
+
+            // Board string doesn't define what the previous moves were, so the moves list starts empty
+            return new GoGame(board, currentTurnBlack, fields[2].Length == 2,
+                new List<Point>(), new List<string>(), blackCaptures, whiteCaptures,
                 new HashSet<string>(), null, null);
         }
     }
