@@ -69,6 +69,7 @@ namespace Go
             BlackCaptures = blackCaptures;
             WhiteCaptures = whiteCaptures;
             PreviousBoards = previousBoards;
+            _ = PreviousBoards.Add(GetBoardString().ToString());
 
             InitialState = initialState ?? ToString();
             PreviousGameState = previousGameState;
@@ -77,7 +78,7 @@ namespace Go
         /// <summary>
         /// Create a deep copy of all parameters to this go game
         /// </summary>
-        public GoGame Clone()
+        public GoGame Clone(bool clonePreviousState = true)
         {
             bool?[,] boardClone = new bool?[Board.GetLength(0), Board.GetLength(1)];
             for (int x = 0; x < boardClone.GetLength(0); x++)
@@ -90,7 +91,8 @@ namespace Go
 
             return new GoGame(boardClone, CurrentTurnBlack, GameOver, new List<Point>(Moves),
                 new List<string>(MoveText), BlackCaptures, WhiteCaptures,
-                new HashSet<string>(PreviousBoards), InitialState, PreviousGameState?.Clone());
+                new HashSet<string>(PreviousBoards), InitialState,
+                clonePreviousState ? PreviousGameState?.Clone() : PreviousGameState);
         }
 
         /// <summary>
@@ -135,11 +137,12 @@ namespace Go
                 return false;
             }
 
-            // Temporarily set the piece at the destination to run capture check to check for suicide
-            Board[destination.X, destination.Y] = CurrentTurnBlack;
-            bool suicide = BoardAnalysis.GetSurroundedStones(Board, CurrentTurnBlack).Any(s => Board[s.X, s.Y] == CurrentTurnBlack);
-            Board[destination.X, destination.Y] = null;
-            return !suicide;
+            // Try making move to see if it results in suicide or repetition
+            GoGame clone = Clone(clonePreviousState: false);
+            _ = clone.PlaceStone(destination, forceMove: true, updateMoveText: false);
+            bool suicide = BoardAnalysis.GetSurroundedStones(clone.Board, CurrentTurnBlack).Any(s => Board[s.X, s.Y] == CurrentTurnBlack);
+            bool repetition = PreviousBoards.Contains(clone.GetBoardString().ToString());
+            return !suicide && !repetition;
         }
 
         /// <summary>
@@ -172,7 +175,7 @@ namespace Go
             WhiteCaptures += removedBlack;
 
             CurrentTurnBlack = !CurrentTurnBlack;
-            _ = PreviousBoards.Add(ToString());
+            _ = PreviousBoards.Add(GetBoardString().ToString());
 
             if (updateMoveText)
             {
@@ -185,10 +188,7 @@ namespace Go
             return true;
         }
 
-        /// <summary>
-        /// Get a string representation of the given board.
-        /// </summary>
-        public override string ToString()
+        private StringBuilder GetBoardString()
         {
             StringBuilder result = new();
 
@@ -204,6 +204,16 @@ namespace Go
                     _ = result.Append('/');
                 }
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get a string representation of the given board.
+        /// </summary>
+        public override string ToString()
+        {
+            StringBuilder result = GetBoardString();
 
             _ = result.Append(' ').Append(BlackCaptures).Append('/').Append(WhiteCaptures)
                 .Append(CurrentTurnBlack ? " b" : " w");
