@@ -172,7 +172,6 @@ namespace Go
             ConcurrentBag<PossibleMove> possibleMoves = new();
             int remainingThreads = 0;
 
-            // TODO: Also test passing
             for (int x = 0; x < game.Board.GetLength(0); x++)
             {
                 for (int y = 0; y < game.Board.GetLength(1); y++)
@@ -203,6 +202,26 @@ namespace Go
                 }
             }
 
+            // Spawn a thread to test passing the turn
+            remainingThreads++;
+            GoGame passGameClone = game.Clone();
+            List<Point> passLine = new() { new Point(-1, -1) };
+            _ = passGameClone.PassTurn(updateMoveText: false);
+
+            Thread passThread = new(() =>
+            {
+                PossibleMove? bestSubMove = MinimaxMove(passGameClone,
+                    double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, passLine, cancellationToken);
+                // Don't include default value in results
+                if (bestSubMove is not null)
+                {
+                    possibleMoves.Add(new PossibleMove(new Point(-1, -1),
+                        bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
+                }
+                remainingThreads--;
+            });
+            passThread.Start();
+
             await Task.Run(async () =>
             {
                 while (remainingThreads > 0 || cancellationToken.IsCancellationRequested)
@@ -222,31 +241,13 @@ namespace Go
             List<Point> currentLine, CancellationToken cancellationToken)
         {
             Point lastMoveDst = game.Moves.Last();
-            if (game.GameOver)
+            if (depth > maxDepth || game.GameOver)
             {
-                // TODO: Check if game is won and who by
-                if (false)
-                {
-                    return new PossibleMove(lastMoveDst, double.NegativeInfinity, currentLine);
-                }
-                else if (false)
-                {
-                    return new PossibleMove(lastMoveDst, double.PositiveInfinity, currentLine);
-                }
-                else
-                {
-                    // Draw
-                    return new PossibleMove(lastMoveDst, 0, currentLine);
-                }
-            }
-            if (depth > maxDepth)
-            {
-                return new PossibleMove( lastMoveDst, CalculateGameValue(game), currentLine);
+                return new PossibleMove(lastMoveDst, CalculateGameValue(game), currentLine);
             }
 
             PossibleMove? bestMove = null;
 
-            // TODO: Also test passing
             for (int x = 0; x < game.Board.GetLength(0); x++)
             {
                 for (int y = 0; y < game.Board.GetLength(1); y++)
@@ -298,6 +299,43 @@ namespace Go
                                 beta = potentialMove.Value.EvaluatedFutureValue;
                             }
                         }
+                    }
+                }
+            }
+
+            // Test passing the turn
+            GoGame passGameClone = game.Clone();
+            List<Point> passLine = new() { new Point(-1, -1) };
+            _ = passGameClone.PassTurn(updateMoveText: false);
+            PossibleMove? passMove = MinimaxMove(passGameClone, alpha, beta, depth + 1, maxDepth, passLine, cancellationToken);
+            if (passMove is not null)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return bestMove;
+                }
+                if (game.CurrentTurnBlack)
+                {
+                    if (bestMove is null || double.IsNegativeInfinity(bestMove.Value.EvaluatedFutureValue)
+                        || passMove.Value.EvaluatedFutureValue > bestMove.Value.EvaluatedFutureValue)
+                    {
+                        bestMove = new PossibleMove(new Point(-1, -1), passMove.Value.EvaluatedFutureValue, passMove.Value.BestLine);
+                    }
+                    if (passMove.Value.EvaluatedFutureValue >= beta)
+                    {
+                        return bestMove;
+                    }
+                }
+                else
+                {
+                    if (bestMove is null || double.IsPositiveInfinity(bestMove.Value.EvaluatedFutureValue)
+                        || passMove.Value.EvaluatedFutureValue < bestMove.Value.EvaluatedFutureValue)
+                    {
+                        bestMove = new PossibleMove(new Point(-1, -1), passMove.Value.EvaluatedFutureValue, passMove.Value.BestLine);
+                    }
+                    if (passMove.Value.EvaluatedFutureValue <= alpha)
+                    {
+                        return bestMove;
                     }
                 }
             }

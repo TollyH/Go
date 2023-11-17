@@ -134,7 +134,7 @@ namespace Go
 
             }
 
-            if (currentBestMove is not null)
+            if (currentBestMove is not null && currentBestMove.Value.Destination.X >= 0)
             {
                 Rectangle bestMoveDstHighlight = new()
                 {
@@ -344,7 +344,14 @@ namespace Go
             GoGame moveStringGenerator = game.Clone();
             foreach (System.Drawing.Point destination in bestMove.Value.BestLine)
             {
-                _ = moveStringGenerator.PlaceStone(destination, true);
+                if (destination.X == -1 || destination.Y == -1)
+                {
+                    _ = moveStringGenerator.PassTurn();
+                }
+                else
+                {
+                    _ = moveStringGenerator.PlaceStone(destination, true);
+                }
                 convertedBestLine += " " + moveStringGenerator.MoveText[^1];
             }
             toUpdate.ToolTip = convertedBestLine.Trim();
@@ -377,7 +384,14 @@ namespace Go
                     return;
                 }
 
-                _ = game.PlaceStone(bestMove.Value.Destination, true);
+                if (bestMove.Value.Destination.X == -1 || bestMove.Value.Destination.Y == -1)
+                {
+                    _ = game.PassTurn();
+                }
+                else
+                {
+                    _ = game.PlaceStone(bestMove.Value.Destination, true);
+                }
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
                 if (config.UpdateEvalAfterBot)
