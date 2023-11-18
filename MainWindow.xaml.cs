@@ -135,19 +135,35 @@ namespace Go
 
             }
 
-            if (currentBestMove is not null && currentBestMove.Value.Destination.X >= 0)
+            if (currentBestMove is not null)
             {
-                Rectangle bestMoveDstHighlight = new()
+                if (currentBestMove.Value.Destination.X >= 0)
                 {
-                    Width = tileWidth,
-                    Height = tileHeight,
-                    Fill = new SolidColorBrush(config.BestMoveDestinationColor)
-                };
-                _ = goGameCanvas.Children.Add(bestMoveDstHighlight);
-                Canvas.SetBottom(bestMoveDstHighlight,
-                    (boardFlipped ? boardMaxY - currentBestMove.Value.Destination.Y : currentBestMove.Value.Destination.Y) * tileHeight);
-                Canvas.SetLeft(bestMoveDstHighlight,
-                    (boardFlipped ? boardMaxX - currentBestMove.Value.Destination.X : currentBestMove.Value.Destination.X) * tileWidth);
+                    passMenuItem.Background = null;
+                    Rectangle bestMoveDstHighlight = new()
+                    {
+                        Width = tileWidth,
+                        Height = tileHeight,
+                        Fill = new SolidColorBrush(config.BestMoveDestinationColor)
+                    };
+                    _ = goGameCanvas.Children.Add(bestMoveDstHighlight);
+                    Canvas.SetBottom(bestMoveDstHighlight,
+                        (boardFlipped
+                            ? boardMaxY - currentBestMove.Value.Destination.Y
+                            : currentBestMove.Value.Destination.Y) * tileHeight);
+                    Canvas.SetLeft(bestMoveDstHighlight,
+                        (boardFlipped
+                            ? boardMaxX - currentBestMove.Value.Destination.X
+                            : currentBestMove.Value.Destination.X) * tileWidth);
+                }
+                else
+                {
+                    passMenuItem.Background = new SolidColorBrush(config.BestMoveDestinationColor);
+                }
+            }
+            else
+            {
+                passMenuItem.Background = null;
             }
 
             for (int x = 0; x < boardWidth; x++)

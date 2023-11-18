@@ -26,7 +26,7 @@ namespace Go
 
             BoardColor = Color.FromRgb(249, 184, 83);
             LastMoveDestinationColor = Colors.Cyan;
-            BestMoveDestinationColor = Colors.Green;
+            BestMoveDestinationColor = Colors.LightGreen;
             BlackPieceColor = Colors.Black;
             WhitePieceColor = Colors.White;
             IllegalMoveColor = Colors.Red;
