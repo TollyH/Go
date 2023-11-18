@@ -142,8 +142,8 @@ namespace Go
 
             // Try making move to see if it results in suicide or repetition
             GoGame clone = Clone(clonePreviousState: false);
-            _ = clone.PlaceStone(destination, forceMove: true, updateMoveText: false);
-            bool suicide = BoardAnalysis.GetSurroundedStones(clone.Board, CurrentTurnBlack).Any(s => Board[s.X, s.Y] == CurrentTurnBlack);
+            _ = clone.PlaceStone(destination, forceMove: true, updateMoveText: false, removeSurroundedStones: false);
+            bool suicide = BoardAnalysis.GetSurroundedStones(clone.Board, CurrentTurnBlack).Any(s => clone.Board[s.X, s.Y] == CurrentTurnBlack);
             bool repetition = PreviousBoards.Contains(clone.GetBoardString().ToString());
             return !suicide && !repetition;
         }
@@ -187,7 +187,7 @@ namespace Go
         /// </param>
         /// <returns><see langword="true"/> if the move was valid and executed, <see langword="false"/> otherwise</returns>
         /// <remarks>This method will check if the move is completely valid, unless <paramref name="forceMove"/> is <see langword="true"/>. No other validity checks are required.</remarks>
-        public bool PlaceStone(Point destination, bool forceMove = false, bool updateMoveText = true)
+        public bool PlaceStone(Point destination, bool forceMove = false, bool updateMoveText = true, bool removeSurroundedStones = true)
         {
             if (!forceMove && (GameOver || !IsPlacementPossible(destination)))
             {
@@ -206,9 +206,12 @@ namespace Go
 
             Board[destination.X, destination.Y] = CurrentTurnBlack;
 
-            (int removedBlack, int removedWhite) = RemoveSurroundedStones();
-            BlackCaptures += removedWhite;
-            WhiteCaptures += removedBlack;
+            if (removeSurroundedStones)
+            {
+                (int removedBlack, int removedWhite) = RemoveSurroundedStones();
+                BlackCaptures += removedWhite;
+                WhiteCaptures += removedBlack;
+            }
 
             CurrentTurnBlack = !CurrentTurnBlack;
             _ = PreviousBoards.Add(GetBoardString().ToString());
