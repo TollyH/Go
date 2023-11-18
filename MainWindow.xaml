@@ -30,6 +30,7 @@
             </MenuItem>
             <MenuItem Header="_Settings" Margin="2">
                 <MenuItem x:Name="flipBoardItem" Header="_Flip the Board on White's Turn" Click="SettingsCheckItem_Click" IsCheckable="True"/>
+                <MenuItem x:Name="highlightIllegalItem" Header="_Highlight Illegal Moves" Click="SettingsCheckItem_Click" IsCheckable="True"/>
                 <MenuItem x:Name="updateEvalAfterBotItem" Header="Update _Evaluation Meter Automatically After Computer Move" Click="SettingsCheckItem_Click" IsCheckable="True"/>
                 <Separator/>
                 <MenuItem Header="Customise..." Click="CustomiseItem_Click"/>

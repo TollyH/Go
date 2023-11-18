@@ -8,6 +8,7 @@ namespace Go
     public class Settings
     {
         public bool FlipBoard { get; set; }
+        public bool HighlightIllegalMoves { get; set; }
         public bool UpdateEvalAfterBot { get; set; }
 
         public Color BoardColor { get; set; }
@@ -20,6 +21,7 @@ namespace Go
         public Settings()
         {
             FlipBoard = false;
+            HighlightIllegalMoves = false;
             UpdateEvalAfterBot = true;
 
             BoardColor = Color.FromRgb(249, 184, 83);
@@ -31,11 +33,12 @@ namespace Go
         }
 
         [JsonConstructor]
-        public Settings(bool flipBoard, bool updateEvalAfterBot,
+        public Settings(bool flipBoard, bool highlightIllegalMoves, bool updateEvalAfterBot,
             Color boardColor, Color lastMoveDestinationColor, Color bestMoveDestinationColor,
             Color blackPieceColor, Color whitePieceColor, Color illegalMoveColor)
         {
             FlipBoard = flipBoard;
+            HighlightIllegalMoves = highlightIllegalMoves;
             UpdateEvalAfterBot = updateEvalAfterBot;
             BoardColor = boardColor;
             LastMoveDestinationColor = lastMoveDestinationColor;

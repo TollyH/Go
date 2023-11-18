@@ -46,6 +46,7 @@ namespace Go
 
             goBoardBackground.Background = new SolidColorBrush(config.BoardColor);
             flipBoardItem.IsChecked = config.FlipBoard;
+            highlightIllegalItem.IsChecked = config.HighlightIllegalMoves;
             updateEvalAfterBotItem.IsChecked = config.UpdateEvalAfterBot;
         }
 
@@ -165,6 +166,20 @@ namespace Go
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);
                         Canvas.SetLeft(newStone, (boardFlipped ? boardMaxX - x : x) * tileWidth);
+                    }
+                    else if (config.HighlightIllegalMoves && !game.IsPlacementPossible(new System.Drawing.Point(x, y)))
+                    {
+                        Rectangle illegalMoveHighlight = new()
+                        {
+                            Width = tileWidth,
+                            Height = tileHeight,
+                            Fill = new SolidColorBrush(config.IllegalMoveColor)
+                        };
+                        _ = goGameCanvas.Children.Add(illegalMoveHighlight);
+                        Canvas.SetBottom(illegalMoveHighlight,
+                            (boardFlipped ? boardMaxY - y : y) * tileHeight);
+                        Canvas.SetLeft(illegalMoveHighlight,
+                            (boardFlipped ? boardMaxX - x : x) * tileWidth);
                     }
                 }
             }
@@ -587,6 +602,7 @@ namespace Go
         private void SettingsCheckItem_Click(object sender, RoutedEventArgs e)
         {
             config.FlipBoard = flipBoardItem.IsChecked;
+            config.HighlightIllegalMoves = highlightIllegalItem.IsChecked;
             config.UpdateEvalAfterBot = updateEvalAfterBotItem.IsChecked;
 
             UpdateGameDisplay();
