@@ -49,6 +49,12 @@
                 <Label x:Name="boardHeightHeader" Content="Height (19)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
                 <Slider x:Name="boardHeightSlider" Margin="5,1,5,5" Minimum="2" Maximum="50" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="19" ValueChanged="BoardSlider_ValueChanged"/>
                 <Separator/>
+                <Label Content="Captures" Margin="5" Padding="0,0,0,0" FontSize="14"/>
+                <Label x:Name="blackCapturesHeader" Content="Black (0)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
+                <Slider x:Name="blackCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="180" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
+                <Label x:Name="whiteCapturesHeader" Content="White (0)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
+                <Slider x:Name="whiteCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="181" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
+                <Separator/>
                 <Label Content="Current Turn" Margin="5" Padding="0,0,0,0" FontSize="14"/>
                 <Grid>
                     <RadioButton x:Name="turnSelectBlack" Margin="5,2,5,2" Content="Black" GroupName="CurrentTurn" IsChecked="True"/>

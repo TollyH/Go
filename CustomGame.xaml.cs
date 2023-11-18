@@ -181,7 +181,8 @@ namespace Go
             bool currentTurnBlack = turnSelectBlack.IsChecked ?? false;
             GeneratedGame = new GoGame(Board, currentTurnBlack, false,
                 new List<System.Drawing.Point>(), new List<string>(),
-                0, 0, new HashSet<string>(), null, null);
+                (int)blackCapturesSlider.Value, (int)whiteCapturesSlider.Value,
+                new HashSet<string>(), null, null);
             Close();
         }
 
@@ -261,6 +262,9 @@ namespace Go
             boardWidthHeader.Content = $"Width ({newWidth})";
             boardHeightHeader.Content = $"Height ({newHeight})";
 
+            blackCapturesSlider.Maximum = Math.Floor((double)newWidth * newHeight / 2);
+            whiteCapturesSlider.Maximum = Math.Ceiling((double)newWidth * newHeight / 2);
+
             bool?[,] newBoard = new bool?[newWidth, newHeight];
             for (int x = 0; x < newWidth && x < Board.GetLength(0); x++)
             {
@@ -271,6 +275,16 @@ namespace Go
             }
             Board = newBoard;
             UpdateBoard();
+        }
+
+        private void CapturesSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+            blackCapturesHeader.Content = $"Black ({(int)blackCapturesSlider.Value})";
+            whiteCapturesHeader.Content = $"White ({(int)whiteCapturesSlider.Value})";
         }
     }
 }
