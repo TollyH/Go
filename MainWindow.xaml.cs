@@ -160,7 +160,7 @@ namespace Go
                         {
                             Width = tileWidth,
                             Height = tileHeight,
-                            Fill = stone.Value ? Brushes.Black : Brushes.White
+                            Fill = stone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor)
                         };
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);

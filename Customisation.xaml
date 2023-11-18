@@ -11,6 +11,8 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,9 +21,15 @@
         </Grid.RowDefinitions>
         <Label Grid.Column="0" Grid.Row="0" Margin="10" Content="Board"/>
         <xctk:ColorPicker x:Name="boardPicker" Grid.Column="1" Grid.Row="0" Margin="10" Width="180" ColorMode="ColorCanvas" SelectedColorChanged="Picker_SelectedColorChanged"/>
-        <Label Grid.Column="0" Grid.Row="1" Margin="10" Content="Last Move (Destination)"/>
+        <Label Grid.Column="0" Grid.Row="1" Margin="10" Content="Last Move"/>
         <xctk:ColorPicker x:Name="lastMoveDestinationPicker" Grid.Column="1" Grid.Row="1" Margin="10" Width="180" ColorMode="ColorCanvas" SelectedColorChanged="Picker_SelectedColorChanged"/>
-        <Label Grid.Column="0" Grid.Row="2" Margin="10" Content="Best Move (Destination)"/>
+        <Label Grid.Column="0" Grid.Row="2" Margin="10" Content="Best Move"/>
         <xctk:ColorPicker x:Name="bestMoveDestinationPicker" Grid.Column="1" Grid.Row="2" Margin="10" Width="180" ColorMode="ColorCanvas" SelectedColorChanged="Picker_SelectedColorChanged"/>
+        <Label Grid.Column="2" Grid.Row="0" Margin="10" Content="Black Piece"/>
+        <xctk:ColorPicker x:Name="blackPiecePicker" Grid.Column="3" Grid.Row="0" Margin="10" Width="180" ColorMode="ColorCanvas" SelectedColorChanged="Picker_SelectedColorChanged"/>
+        <Label Grid.Column="2" Grid.Row="1" Margin="10" Content="White Piece"/>
+        <xctk:ColorPicker x:Name="whitePiecePicker" Grid.Column="3" Grid.Row="1" Margin="10" Width="180" ColorMode="ColorCanvas" SelectedColorChanged="Picker_SelectedColorChanged"/>
+        <Label Grid.Column="2" Grid.Row="2" Margin="10" Content="Illegal Move"/>
+        <xctk:ColorPicker x:Name="illegalMovePicker" Grid.Column="3" Grid.Row="2" Margin="10" Width="180" ColorMode="ColorCanvas" SelectedColorChanged="Picker_SelectedColorChanged"/>
     </Grid>
 </Window>

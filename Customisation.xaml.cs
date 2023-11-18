@@ -20,6 +20,9 @@ namespace Go
             boardPicker.SelectedColor = Config.BoardColor;
             lastMoveDestinationPicker.SelectedColor = Config.LastMoveDestinationColor;
             bestMoveDestinationPicker.SelectedColor = Config.BestMoveDestinationColor;
+            blackPiecePicker.SelectedColor = Config.BlackPieceColor;
+            whitePiecePicker.SelectedColor = Config.WhitePieceColor;
+            illegalMovePicker.SelectedColor = Config.IllegalMoveColor;
 
             performRefresh = true;
         }
@@ -33,6 +36,9 @@ namespace Go
             Config.BoardColor = boardPicker.SelectedColor ?? default;
             Config.LastMoveDestinationColor = lastMoveDestinationPicker.SelectedColor ?? default;
             Config.BestMoveDestinationColor = bestMoveDestinationPicker.SelectedColor ?? default;
+            Config.BlackPieceColor = blackPiecePicker.SelectedColor ?? default;
+            Config.WhitePieceColor = whitePiecePicker.SelectedColor ?? default;
+            Config.IllegalMoveColor = illegalMovePicker.SelectedColor ?? default;
         }
     }
 }
