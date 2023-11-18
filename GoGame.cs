@@ -81,7 +81,7 @@ namespace Go
         /// <summary>
         /// Create a deep copy of all parameters to this go game
         /// </summary>
-        public GoGame Clone(bool clonePreviousState = true)
+        public GoGame Clone(bool clonePreviousState)
         {
             bool?[,] boardClone = new bool?[Board.GetLength(0), Board.GetLength(1)];
             for (int x = 0; x < boardClone.GetLength(0); x++)
@@ -95,7 +95,7 @@ namespace Go
             return new GoGame(boardClone, CurrentTurnBlack, GameOver, new List<Point>(Moves),
                 new List<string>(MoveText), BlackCaptures, WhiteCaptures,
                 new HashSet<string>(PreviousBoards), InitialState,
-                clonePreviousState ? PreviousGameState?.Clone() : PreviousGameState);
+                clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState);
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace Go
             if (updateMoveText)
             {
                 // Used for move undoing
-                PreviousGameState = Clone();
+                PreviousGameState = Clone(true);
                 string newMove = CurrentTurnBlack ? "BP" : "WP";
                 MoveText.Add(newMove);
             }
@@ -197,7 +197,7 @@ namespace Go
             if (updateMoveText)
             {
                 // Used for move undoing
-                PreviousGameState = Clone();
+                PreviousGameState = Clone(true);
                 string newMove = CurrentTurnBlack ? "B" : "W";
                 newMove += $"{destination.X + 1}-{Board.GetLength(1) - destination.Y}";
                 MoveText.Add(newMove);

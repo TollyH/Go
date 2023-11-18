@@ -341,7 +341,7 @@ namespace Go
             toUpdate.Content = bestMove.Value.EvaluatedFutureValue.ToString("+0.00;-0.00;0.00");
 
             string convertedBestLine = "";
-            GoGame moveStringGenerator = game.Clone();
+            GoGame moveStringGenerator = game.Clone(false);
             foreach (System.Drawing.Point destination in bestMove.Value.BestLine)
             {
                 if (destination.X == -1 || destination.Y == -1)

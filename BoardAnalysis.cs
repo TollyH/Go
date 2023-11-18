@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -169,8 +168,7 @@ namespace Go
         /// <returns>An array of all possible moves, with information on board value and ability to checkmate</returns>
         public static async Task<PossibleMove[]> EvaluatePossibleMoves(GoGame game, int maxDepth, CancellationToken cancellationToken)
         {
-            ConcurrentBag<PossibleMove> possibleMoves = new();
-            int remainingThreads = 0;
+            List<Task<PossibleMove?>> evaluationTasks = new();
 
             for (int x = 0; x < game.Board.GetLength(0); x++)
             {
@@ -179,62 +177,50 @@ namespace Go
                     Point pt = new(x, y);
                     if (game.IsPlacementPossible(pt))
                     {
-                        remainingThreads++;
                         Point thisPlacement = pt;
-                        GoGame gameClone = game.Clone();
-                        List<Point> thisLine = new() { thisPlacement };
-                        _ = gameClone.PlaceStone(thisPlacement, true, updateMoveText: false);
-
-                        Thread processThread = new(() =>
+                        evaluationTasks.Add(Task.Run(() =>
                         {
+                            GoGame gameClone = game.Clone(false);
+                            List<Point> thisLine = new() { thisPlacement };
+                            _ = gameClone.PlaceStone(thisPlacement, true, updateMoveText: false);
+
                             PossibleMove? bestSubMove = MinimaxMove(gameClone,
                                 double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, thisLine, cancellationToken);
-                            // Don't include default value in results
-                            if (bestSubMove is not null)
-                            {
-                                possibleMoves.Add(new PossibleMove(thisPlacement,
-                                    bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
-                            }
-                            remainingThreads--;
-                        });
-                        processThread.Start();
+                            
+                            return (PossibleMove?)(bestSubMove is null ? null : new PossibleMove(thisPlacement,
+                                bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
+                        }, cancellationToken));
                     }
                 }
             }
 
-            // Spawn a thread to test passing the turn
-            remainingThreads++;
-            GoGame passGameClone = game.Clone();
-            List<Point> passLine = new() { new Point(-1, -1) };
-            _ = passGameClone.PassTurn(updateMoveText: false);
-
-            Thread passThread = new(() =>
+            // Spawn a task to test passing the turn
+            evaluationTasks.Add(Task.Run(() =>
             {
+                GoGame passGameClone = game.Clone(false);
+                List<Point> passLine = new() { new Point(-1, -1) };
+                _ = passGameClone.PassTurn(updateMoveText: false);
+
                 PossibleMove? bestSubMove = MinimaxMove(passGameClone,
                     double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, passLine, cancellationToken);
-                // Don't include default value in results
-                if (bestSubMove is not null)
-                {
-                    possibleMoves.Add(new PossibleMove(new Point(-1, -1),
-                        bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
-                }
-                remainingThreads--;
-            });
-            passThread.Start();
 
-            await Task.Run(async () =>
-            {
-                while (remainingThreads > 0 || cancellationToken.IsCancellationRequested)
-                {
-                    await Task.Delay(50);
-                }
-            }, cancellationToken);
+                return (PossibleMove?)(bestSubMove is null ? null : new PossibleMove(new Point(-1, -1),
+                    bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
+            }, cancellationToken));
 
             if (cancellationToken.IsCancellationRequested)
             {
                 return Array.Empty<PossibleMove>();
             }
-            return possibleMoves.ToArray();
+            try
+            {
+                // Remove default moves from return value
+                return (await Task.WhenAll(evaluationTasks)).Where(m => m is not null).Select(m => m!.Value).ToArray();
+            }
+            catch (TaskCanceledException)
+            {
+                return Array.Empty<PossibleMove>();
+            }
         }
 
         private static PossibleMove? MinimaxMove(GoGame game, double alpha, double beta, int depth, int maxDepth,
@@ -255,7 +241,7 @@ namespace Go
                     Point pt = new(x, y);
                     if (game.IsPlacementPossible(pt))
                     {
-                        GoGame gameClone = game.Clone();
+                        GoGame gameClone = game.Clone(false);
                         List<Point> newLine = new(currentLine) { pt };
                         _ = gameClone.PlaceStone(pt, true, updateMoveText: false);
                         PossibleMove? potentialMove = MinimaxMove(gameClone, alpha, beta, depth + 1, maxDepth, newLine, cancellationToken);
@@ -304,7 +290,7 @@ namespace Go
             }
 
             // Test passing the turn
-            GoGame passGameClone = game.Clone();
+            GoGame passGameClone = game.Clone(false);
             List<Point> passLine = new() { new Point(-1, -1) };
             _ = passGameClone.PassTurn(updateMoveText: false);
             PossibleMove? passMove = MinimaxMove(passGameClone, alpha, beta, depth + 1, maxDepth, passLine, cancellationToken);
