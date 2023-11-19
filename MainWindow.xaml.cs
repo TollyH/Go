@@ -20,8 +20,8 @@ namespace Go
         private GoGame game = new(19, 19);
         private readonly Settings config;
 
-        private HashSet<System.Drawing.Point> squareHighlights = new();
-        private HashSet<(System.Drawing.Point, System.Drawing.Point)> lineHighlights = new();
+        private readonly HashSet<System.Drawing.Point> squareHighlights = new();
+        private readonly HashSet<(System.Drawing.Point, System.Drawing.Point)> lineHighlights = new();
         private System.Drawing.Point? mouseDownStartPoint = null;
 
         private bool blackIsComputer = false;
