@@ -15,6 +15,95 @@ namespace Go
         };
 
         /// <summary>
+        /// Fill in empty board intersections that are surrounded by a single colour with that colour.
+        /// Intended for use with area scoring.
+        /// </summary>
+        /// <remarks>This method does not directly modify the <paramref name="board"/> parameter.</remarks>
+        public static bool?[,] FillSurroundedAreas(bool?[,] board)
+        {
+            int boardWidth = board.GetLength(0);
+            int boardHeight = board.GetLength(1);
+
+            bool?[,] newBoard = new bool?[boardWidth, boardHeight];
+            HashSet<Point> scannedPoints = new();
+
+            for (int x = 0; x < boardWidth; x++)
+            {
+                for (int y = 0; y < boardHeight; y++)
+                {
+                    Point startPoint = new(x, y);
+                    bool? startingColour = board[x, y];
+                    if (startingColour is not null)
+                    {
+                        newBoard[x, y] = startingColour;
+                        continue;
+                    }
+                    if (scannedPoints.Contains(startPoint))
+                    {
+                        continue;
+                    }
+                    // The current group is empty liberties that are connected to the starting liberty
+                    List<Point> currentGroup = new() { startPoint };
+                    int surroundingBlack = 0;
+                    int surroundingWhite = 0;
+                    Queue<Point> pointsQueue = new();
+                    pointsQueue.Enqueue(startPoint);
+                    while (pointsQueue.TryDequeue(out Point pt))
+                    {
+                        if (!scannedPoints.Add(pt))
+                        {
+                            // Skip already scanned points
+                            continue;
+                        }
+
+                        // Scan surrounding liberties
+                        foreach (Point diff in Liberties)
+                        {
+                            Point adjPoint = new(pt.X + diff.X, pt.Y + diff.Y);
+                            if (adjPoint.X < 0 || adjPoint.Y < 0
+                                || adjPoint.X >= boardWidth || adjPoint.Y >= boardHeight)
+                            {
+                                // Out of bounds
+                                continue;
+                            }
+
+                            bool? adjColour = board[adjPoint.X, adjPoint.Y];
+                            if (adjColour is null)
+                            {
+                                // If the surrounding liberty is also empty, add it to the group and scan its surroundings too
+                                currentGroup.Add(adjPoint);
+                                pointsQueue.Enqueue(adjPoint);
+                            }
+                            else if (adjColour.Value)
+                            {
+                                surroundingBlack++;
+                            }
+                            else
+                            {
+                                surroundingWhite++;
+                            }
+                        }
+                    }
+                    if (surroundingBlack == 0 && surroundingWhite > 0)
+                    {
+                        foreach (Point pt in currentGroup)
+                        {
+                            newBoard[pt.X, pt.Y] = false;
+                        }
+                    }
+                    else if (surroundingWhite == 0 && surroundingBlack > 0)
+                    {
+                        foreach (Point pt in currentGroup)
+                        {
+                            newBoard[pt.X, pt.Y] = true;
+                        }
+                    }
+                }
+            }
+            return newBoard;
+        }
+
+        /// <summary>
         /// Calculate the value of the given game with a given scoring system
         /// </summary>
         /// <returns>
@@ -27,7 +116,8 @@ namespace Go
             {
                 default:
                 case ScoringSystem.Area:
-                    return 0;
+                    bool?[,] filledBoard = FillSurroundedAreas(game.Board);
+                    return filledBoard.OfType<bool>().Sum(p => p ? 1 : -1) - game.KomiCompensation;
                 case ScoringSystem.Territory:
                     return 0;
                 case ScoringSystem.Stone:
@@ -40,13 +130,16 @@ namespace Go
         /// </summary>
         public static Point[] GetSurroundedStones(bool?[,] board, bool currentTurnBlack)
         {
+            int boardWidth = board.GetLength(0);
+            int boardHeight = board.GetLength(1);
+
             List<Point> surroundedStones = new();
             HashSet<Point> scannedPoints = new();
             bool anyBlackCaptured = false;
             bool anyWhiteCaptured = false;
-            for (int x = 0; x < board.GetLength(0); x++)
+            for (int x = 0; x < boardWidth; x++)
             {
-                for (int y = 0; y < board.GetLength(1); y++)
+                for (int y = 0; y < boardHeight; y++)
                 {
                     Point startPoint = new(x, y);
                     bool? startingColour = board[x, y];
@@ -73,7 +166,7 @@ namespace Go
                         {
                             Point adjPoint = new(pt.X + diff.X, pt.Y + diff.Y);
                             if (adjPoint.X < 0 || adjPoint.Y < 0
-                                || adjPoint.X >= board.GetLength(0) || adjPoint.Y >= board.GetLength(1))
+                                || adjPoint.X >= boardWidth || adjPoint.Y >= boardHeight)
                             {
                                 // Out of bounds
                                 continue;
