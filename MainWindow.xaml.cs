@@ -17,7 +17,7 @@ namespace Go
     /// </summary>
     public partial class MainWindow : Window
     {
-        private GoGame game = new(19, 19);
+        private GoGame game = new(19, 19, ScoringSystem.Area);
         private readonly Settings config;
 
         private readonly HashSet<System.Drawing.Point> squareHighlights = new();
@@ -446,7 +446,7 @@ namespace Go
         {
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
-            game = new GoGame(boardWidth, boardHeight);
+            game = new GoGame(boardWidth, boardHeight, ScoringSystem.Area);
             currentBestMove = null;
             manuallyEvaluating = false;
             blackEvaluation.Content = "?";

@@ -186,7 +186,21 @@ namespace Go
                 komiCompensation += 0.5;
             }
 
-            GeneratedGame = new GoGame(Board, currentTurnBlack, false,
+            ScoringSystem scoring;
+            if (scoringSelectArea.IsChecked ?? false)
+            {
+                scoring = ScoringSystem.Area;
+            }
+            else if (scoringSelectTerritory.IsChecked ?? false)
+            {
+                scoring = ScoringSystem.Territory;
+            }
+            else
+            {
+                scoring = ScoringSystem.Stone;
+            }
+
+            GeneratedGame = new GoGame(Board, currentTurnBlack, false, scoring,
                 new List<System.Drawing.Point>(), new List<string>(),
                 (int)blackCapturesSlider.Value, (int)whiteCapturesSlider.Value,
                 new HashSet<string>(), null, null, komiCompensation);

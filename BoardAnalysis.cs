@@ -15,17 +15,24 @@ namespace Go
         };
 
         /// <summary>
-        /// Calculate the value of the given game based on the stones on the board and in hand
+        /// Calculate the value of the given game with a given scoring system
         /// </summary>
         /// <returns>
-        /// A <see cref="double"/> representing the total stone value of the game.
-        /// Positive means black has stronger material, negative means white does.
+        /// A <see cref="double"/> representing the total value of the game.
+        /// Positive means black has more material, negative means white does.
         /// </returns>
-        // TODO: New logic for Go, include parameter for whether to use Japanese or Chinese scoring
-        public static double CalculateGameValue(GoGame game)
+        public static double CalculateGameValue(GoGame game, ScoringSystem scoring)
         {
-            double inHandTotal = 0;
-            return inHandTotal + game.Board.OfType<bool>().Sum(p => p ? 1 : -1);
+            switch (scoring)
+            {
+                default:
+                case ScoringSystem.Area:
+                    return 0;
+                case ScoringSystem.Territory:
+                    return 0;
+                case ScoringSystem.Stone:
+                    return game.Board.OfType<bool>().Sum(p => p ? 1 : -1) - game.KomiCompensation;
+            }
         }
 
         /// <summary>
@@ -229,7 +236,7 @@ namespace Go
             Point lastMoveDst = game.Moves.Last();
             if (depth > maxDepth || game.GameOver)
             {
-                return new PossibleMove(lastMoveDst, CalculateGameValue(game), currentLine);
+                return new PossibleMove(lastMoveDst, CalculateGameValue(game, game.CurrentScoring), currentLine);
             }
 
             PossibleMove? bestMove = null;

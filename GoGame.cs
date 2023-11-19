@@ -5,6 +5,13 @@ using System.Text;
 
 namespace Go
 {
+    public enum ScoringSystem
+    {
+        Area,
+        Territory,
+        Stone
+    }
+
     public sealed class GoGame
     {
         /// <summary>
@@ -17,6 +24,8 @@ namespace Go
 
         public bool CurrentTurnBlack { get; private set; }
         public bool GameOver { get; private set; }
+
+        public ScoringSystem CurrentScoring { get; }
 
         /// <summary>
         /// Passes are represented by a move at (-1, -1)
@@ -33,7 +42,7 @@ namespace Go
         /// </summary>
         public int WhiteCaptures { get; set; }
 
-        public double KomiCompensation { get; set; }
+        public double KomiCompensation { get; }
 
         // Used to detect repetition
         public HashSet<string> PreviousBoards { get; }
@@ -41,10 +50,11 @@ namespace Go
         /// <summary>
         /// Create a new standard go game with all values at their defaults
         /// </summary>
-        public GoGame(int boardWidth, int boardHeight, double komiCompensation = 0)
+        public GoGame(int boardWidth, int boardHeight, ScoringSystem scoring, double komiCompensation = 0)
         {
             CurrentTurnBlack = true;
             GameOver = false;
+            CurrentScoring = scoring;
 
             Moves = new List<Point>();
             MoveText = new List<string>();
@@ -60,7 +70,7 @@ namespace Go
         /// <summary>
         /// Create a new instance of a go game, setting each game parameter to a non-default value
         /// </summary>
-        public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver,
+        public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver, ScoringSystem scoring,
             List<Point> moves, List<string> moveText, int blackCaptures,
             int whiteCaptures, HashSet<string> previousBoards,
             string? initialState, GoGame? previousGameState, double komiCompensation)
@@ -69,6 +79,7 @@ namespace Go
 
             CurrentTurnBlack = currentTurnBlack;
             GameOver = gameOver;
+            CurrentScoring = scoring;
             Moves = moves;
             MoveText = moveText;
             BlackCaptures = blackCaptures;
@@ -95,7 +106,7 @@ namespace Go
                 }
             }
 
-            return new GoGame(boardClone, CurrentTurnBlack, GameOver, new List<Point>(Moves),
+            return new GoGame(boardClone, CurrentTurnBlack, GameOver, CurrentScoring, new List<Point>(Moves),
                 new List<string>(MoveText), BlackCaptures, WhiteCaptures,
                 new HashSet<string>(PreviousBoards), InitialState,
                 clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState, KomiCompensation);
@@ -246,9 +257,18 @@ namespace Go
         {
             StringBuilder result = GetBoardString();
 
+            char scoring = CurrentScoring switch
+            {
+                ScoringSystem.Area => 'a',
+                ScoringSystem.Territory => 't',
+                ScoringSystem.Stone => 's',
+                _ => 'a'
+            };
+
             _ = result.Append(' ').Append(BlackCaptures).Append('/').Append(WhiteCaptures)
                 .Append(' ').Append(KomiCompensation)
-                .Append(CurrentTurnBlack ? " b" : " w");
+                .Append(CurrentTurnBlack ? " b" : " w")
+                .Append(' ').Append(scoring);
 
             if (GameOver)
             {
@@ -264,9 +284,9 @@ namespace Go
         public static GoGame FromBoardString(string boardString)
         {
             string[] fields = boardString.Split(' ');
-            if (fields.Length != 4)
+            if (fields.Length != 5)
             {
-                throw new FormatException("A valid board text state requires 4 fields separated by spaces");
+                throw new FormatException("A valid board text state requires 5 fields separated by spaces");
             }
 
             string[] ranks = fields[0].Split('/');
@@ -324,8 +344,16 @@ namespace Go
             bool currentTurnBlack = fields[3][0] == 'b' || (fields[3][0] == 'w' ? false
                 : throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark"));
 
+            ScoringSystem scoring = fields[4] switch
+            {
+                "a" => ScoringSystem.Area,
+                "t" => ScoringSystem.Territory,
+                "s" => ScoringSystem.Stone,
+                _ => throw new FormatException("Scoring system specifier must be 'a', 't', or 's'")
+            };
+
             // Board string doesn't define what the previous moves were, so the moves list starts empty
-            return new GoGame(board, currentTurnBlack, fields[3].Length == 2,
+            return new GoGame(board, currentTurnBlack, fields[3].Length == 2, scoring,
                 new List<Point>(), new List<string>(), blackCaptures, whiteCaptures,
                 new HashSet<string>(), null, null, komiCompensation);
         }
