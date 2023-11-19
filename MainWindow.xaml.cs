@@ -383,8 +383,8 @@ namespace Go
                 double finalScore = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
                 string message = finalScore switch
                 {
-                    > 0 => $"Black wins by {finalScore} points.",
-                    < 0 => $"White wins by {-finalScore} points.",
+                    > 0 => $"Black wins by {finalScore} point{(finalScore != 1 ? "s" : "")}.",
+                    < 0 => $"White wins by {-finalScore} point{(finalScore != -1 ? "s" : "")}.",
                     _ => "The game is a draw"
                 };
                 _ = MessageBox.Show(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information);
