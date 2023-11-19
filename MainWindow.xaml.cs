@@ -355,8 +355,14 @@ namespace Go
         {
             if (game.GameOver)
             {
-                // TODO: Determine winner and show how much they won by
-                _ = MessageBox.Show("Game over", "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
+                double finalScore = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
+                string message = finalScore switch
+                {
+                    > 0 => $"Black wins by {finalScore} points.",
+                    < 0 => $"White wins by {-finalScore} points.",
+                    _ => "The game is a draw"
+                };
+                _ = MessageBox.Show(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
