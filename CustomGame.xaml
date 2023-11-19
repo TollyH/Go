@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Go"
         mc:Ignorable="d"
-        Title="Custom Game Setup" Width="720" Height="525" MouseUp="Window_MouseUp" Loaded="Window_Loaded" WindowStyle="ToolWindow" SizeChanged="Window_SizeChanged">
+        Title="Custom Game Setup" Width="770" Height="575" MouseUp="Window_MouseUp" Loaded="Window_Loaded" WindowStyle="ToolWindow" SizeChanged="Window_SizeChanged">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
@@ -51,9 +51,14 @@
                 <Separator/>
                 <Label Content="Captures" Margin="5" Padding="0,0,0,0" FontSize="14"/>
                 <Label x:Name="blackCapturesHeader" Content="Black (0)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
-                <Slider x:Name="blackCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="180" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
+                <Slider x:Name="blackCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="180" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
                 <Label x:Name="whiteCapturesHeader" Content="White (0)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
-                <Slider x:Name="whiteCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="181" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
+                <Slider x:Name="whiteCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="181" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
+                <Separator/>
+                <Label Content="Komi (White Compensation)" Margin="5" Padding="0,0,0,0" FontSize="14"/>
+                <Label x:Name="komiHeader" Content="0" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
+                <Slider x:Name="komiSlider" Margin="5,1,5,5" Minimum="0" Maximum="25" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="KomiSlider_OnValueChanged"/>
+                <CheckBox x:Name="komiHalfPoint" Margin="5,2,10,2" HorizontalAlignment="Left" Content="Add Additional Half-Point" IsChecked="False"/>
                 <Separator/>
                 <Label Content="Current Turn" Margin="5" Padding="0,0,0,0" FontSize="14"/>
                 <Grid>
@@ -70,7 +75,7 @@
         <Button x:Name="importButton" Content="Load Board Text" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
         <Grid x:Name="importOverlay" Grid.ColumnSpan="2" Grid.Column="0" Grid.RowSpan="3" Background="White" Visibility="Collapsed">
             <Label Content="Enter a board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>
-            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn 0/0 b"/>
+            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn 0/0 0 b"/>
             <Button x:Name="submitFenButton" Content="Submit" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" Width="64" Click="submitFenButton_Click"/>
             <Button x:Name="cancelFenButton" Content="Cancel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10,10,84,10" Width="64" Click="cancelFenButton_Click"/>
         </Grid>

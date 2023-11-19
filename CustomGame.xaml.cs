@@ -179,10 +179,17 @@ namespace Go
             BlackIsComputer = computerSelectBlack.IsChecked ?? false;
             WhiteIsComputer = computerSelectWhite.IsChecked ?? false;
             bool currentTurnBlack = turnSelectBlack.IsChecked ?? false;
+
+            double komiCompensation = (int)komiSlider.Value;
+            if (komiHalfPoint.IsChecked ?? false)
+            {
+                komiCompensation += 0.5;
+            }
+
             GeneratedGame = new GoGame(Board, currentTurnBlack, false,
                 new List<System.Drawing.Point>(), new List<string>(),
                 (int)blackCapturesSlider.Value, (int)whiteCapturesSlider.Value,
-                new HashSet<string>(), null, null);
+                new HashSet<string>(), null, null, komiCompensation);
             Close();
         }
 
@@ -285,6 +292,15 @@ namespace Go
             }
             blackCapturesHeader.Content = $"Black ({(int)blackCapturesSlider.Value})";
             whiteCapturesHeader.Content = $"White ({(int)whiteCapturesSlider.Value})";
+        }
+
+        private void KomiSlider_OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+            komiHeader.Content = (int)komiSlider.Value;
         }
     }
 }

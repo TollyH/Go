@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 
 namespace Go
@@ -34,13 +33,15 @@ namespace Go
         /// </summary>
         public int WhiteCaptures { get; set; }
 
+        public double KomiCompensation { get; set; }
+
         // Used to detect repetition
         public HashSet<string> PreviousBoards { get; }
 
         /// <summary>
         /// Create a new standard go game with all values at their defaults
         /// </summary>
-        public GoGame(int boardWidth, int boardHeight)
+        public GoGame(int boardWidth, int boardHeight, double komiCompensation = 0)
         {
             CurrentTurnBlack = true;
             GameOver = false;
@@ -53,6 +54,7 @@ namespace Go
             Board = new bool?[boardWidth, boardHeight];
 
             InitialState = ToString();
+            KomiCompensation = komiCompensation;
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace Go
         public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver,
             List<Point> moves, List<string> moveText, int blackCaptures,
             int whiteCaptures, HashSet<string> previousBoards,
-            string? initialState, GoGame? previousGameState)
+            string? initialState, GoGame? previousGameState, double komiCompensation)
         {
             Board = board;
 
@@ -76,6 +78,7 @@ namespace Go
 
             InitialState = initialState ?? ToString();
             PreviousGameState = previousGameState;
+            KomiCompensation = komiCompensation;
         }
 
         /// <summary>
@@ -95,7 +98,7 @@ namespace Go
             return new GoGame(boardClone, CurrentTurnBlack, GameOver, new List<Point>(Moves),
                 new List<string>(MoveText), BlackCaptures, WhiteCaptures,
                 new HashSet<string>(PreviousBoards), InitialState,
-                clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState);
+                clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState, KomiCompensation);
         }
 
         /// <summary>
@@ -244,6 +247,7 @@ namespace Go
             StringBuilder result = GetBoardString();
 
             _ = result.Append(' ').Append(BlackCaptures).Append('/').Append(WhiteCaptures)
+                .Append(' ').Append(KomiCompensation)
                 .Append(CurrentTurnBlack ? " b" : " w");
 
             if (GameOver)
@@ -260,9 +264,9 @@ namespace Go
         public static GoGame FromBoardString(string boardString)
         {
             string[] fields = boardString.Split(' ');
-            if (fields.Length != 3)
+            if (fields.Length != 4)
             {
-                throw new FormatException("A valid board text state requires 3 fields separated by spaces");
+                throw new FormatException("A valid board text state requires 4 fields separated by spaces");
             }
 
             string[] ranks = fields[0].Split('/');
@@ -308,17 +312,22 @@ namespace Go
                 throw new FormatException("Captures field must contain two numbers separated by a slash");
             }
 
-            if (fields[2].Length != 1 && (fields[2].Length != 2 || fields[2][1] != '!'))
+            if (!double.TryParse(fields[2], out double komiCompensation))
+            {
+                throw new FormatException("Komi compensation field must be a valid decimal number");
+            }
+
+            if (fields[3].Length != 1 && (fields[3].Length != 2 || fields[3][1] != '!'))
             {
                 throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark");
             }
-            bool currentTurnBlack = fields[2][0] == 'b' || (fields[2][0] == 'w' ? false
+            bool currentTurnBlack = fields[3][0] == 'b' || (fields[3][0] == 'w' ? false
                 : throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark"));
 
             // Board string doesn't define what the previous moves were, so the moves list starts empty
-            return new GoGame(board, currentTurnBlack, fields[2].Length == 2,
+            return new GoGame(board, currentTurnBlack, fields[3].Length == 2,
                 new List<Point>(), new List<string>(), blackCaptures, whiteCaptures,
-                new HashSet<string>(), null, null);
+                new HashSet<string>(), null, null, komiCompensation);
         }
     }
 }
