@@ -167,24 +167,52 @@ namespace Go
                 passMenuItem.Background = null;
             }
 
+            // Used to highlight territory when the game is over
+            bool?[,] scoredTerritory;
+            if (game is { GameOver: true, CurrentScoring: ScoringSystem.Area or ScoringSystem.Territory })
+            {
+                scoredTerritory =
+                    BoardAnalysis.FillSurroundedAreas(game.Board, game.CurrentScoring == ScoringSystem.Area);
+            }
+            else
+            {
+                scoredTerritory = new bool?[boardWidth, boardHeight];
+            }
+
             for (int x = 0; x < boardWidth; x++)
             {
                 for (int y = 0; y < boardHeight; y++)
                 {
                     bool? stone = game.Board[x, y];
+                    bool? scoredStone = scoredTerritory[x, y];
                     if (stone is not null)
                     {
                         Ellipse newStone = new()
                         {
                             Width = tileWidth,
                             Height = tileHeight,
-                            Fill = stone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor)
+                            Fill = stone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor),
+                            // Placed stones aren't counted in territory scoring, so make them transparent when game ends
+                            Opacity = game is { GameOver: true, CurrentScoring: ScoringSystem.Territory } ? 0.4 : 1.0
                         };
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);
                         Canvas.SetLeft(newStone, (boardFlipped ? boardMaxX - x : x) * tileWidth);
                     }
-                    else if (config.HighlightIllegalMoves && !game.IsPlacementPossible(new System.Drawing.Point(x, y)))
+                    else if (game.GameOver && scoredStone is not null)
+                    {
+                        // Show surrounded territory that counted toward the final score once the game ends
+                        Ellipse newStone = new()
+                        {
+                            Width = tileWidth / 2,
+                            Height = tileHeight / 2,
+                            Fill = scoredStone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor)
+                        };
+                        _ = goGameCanvas.Children.Add(newStone);
+                        Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight + (tileHeight / 4));
+                        Canvas.SetLeft(newStone, (boardFlipped ? boardMaxX - x : x) * tileWidth + (tileWidth / 4));
+                    }
+                    else if (!game.GameOver && config.HighlightIllegalMoves && !game.IsPlacementPossible(new System.Drawing.Point(x, y)))
                     {
                         Rectangle illegalMoveHighlight = new()
                         {
