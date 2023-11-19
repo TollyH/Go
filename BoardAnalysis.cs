@@ -16,10 +16,14 @@ namespace Go
 
         /// <summary>
         /// Fill in empty board intersections that are surrounded by a single colour with that colour.
-        /// Intended for use with area scoring.
         /// </summary>
+        /// <param name="copyExistingStones">
+        /// Whether or not stones on the source board should be copied to the new board.
+        /// Usually <see langword="true"/> for <see cref="ScoringSystem.Area"/>
+        /// and <see langword="false"/> for <see cref="ScoringSystem.Territory"/>
+        /// </param>
         /// <remarks>This method does not directly modify the <paramref name="board"/> parameter.</remarks>
-        public static bool?[,] FillSurroundedAreas(bool?[,] board)
+        public static bool?[,] FillSurroundedAreas(bool?[,] board, bool copyExistingStones)
         {
             int boardWidth = board.GetLength(0);
             int boardHeight = board.GetLength(1);
@@ -35,7 +39,10 @@ namespace Go
                     bool? startingColour = board[x, y];
                     if (startingColour is not null)
                     {
-                        newBoard[x, y] = startingColour;
+                        if (copyExistingStones)
+                        {
+                            newBoard[x, y] = startingColour;
+                        }
                         continue;
                     }
                     if (scannedPoints.Contains(startPoint))
@@ -116,10 +123,14 @@ namespace Go
             {
                 default:
                 case ScoringSystem.Area:
-                    bool?[,] filledBoard = FillSurroundedAreas(game.Board);
+                    bool?[,] filledBoard = FillSurroundedAreas(game.Board, true);
                     return filledBoard.OfType<bool>().Sum(p => p ? 1 : -1) - game.KomiCompensation;
                 case ScoringSystem.Territory:
-                    return 0;
+                    filledBoard = FillSurroundedAreas(game.Board, false);
+                    int boardValue = filledBoard.OfType<bool>().Sum(p => p ? 1 : -1);
+                    boardValue += game.BlackCaptures;
+                    boardValue -= game.WhiteCaptures;
+                    return boardValue - game.KomiCompensation;
                 case ScoringSystem.Stone:
                     return game.Board.OfType<bool>().Sum(p => p ? 1 : -1) - game.KomiCompensation;
             }

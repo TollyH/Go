@@ -117,7 +117,8 @@ namespace Go
             int boardMaxY = boardHeight - 1;
             int boardMaxX = boardWidth - 1;
 
-            // TODO: Upon game over, show who surrounded territory belongs to with smaller dots
+            // TODO: Upon game over, show who surrounded territory belongs to with smaller dots (except when using stone scoring)
+            // TODO: If using territory scoring, make alive stones transparent
 
             if (game.Moves.Count > 0 && game.Moves[^1].X >= 0)
             {
