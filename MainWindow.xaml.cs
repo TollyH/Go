@@ -18,6 +18,7 @@ namespace Go
     public partial class MainWindow : Window
     {
         private GoGame game = new(19, 19, ScoringSystem.Area);
+        private bool?[,]? inProcessDeadStoneBoard = null;
         private readonly Settings config;
 
         private readonly HashSet<System.Drawing.Point> squareHighlights = new();
@@ -53,7 +54,7 @@ namespace Go
         public void UpdateGameDisplay()
         {
             goGameCanvas.Children.Clear();
-            passMenuItem.IsEnabled = !game.GameOver;
+            passMenuItem.IsEnabled = !game.GameOver || (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null);
 
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
 
@@ -166,7 +167,7 @@ namespace Go
 
             // Used to highlight territory when the game is over
             bool?[,] scoredTerritory;
-            if (game is { GameOver: true, CurrentScoring: ScoringSystem.Area or ScoringSystem.Territory })
+            if (game is { GameOver: true, AwaitingDeadStoneRemoval: false, CurrentScoring: ScoringSystem.Area or ScoringSystem.Territory })
             {
                 scoredTerritory =
                     BoardAnalysis.FillSurroundedAreas(game.Board, game.CurrentScoring == ScoringSystem.Area);
@@ -184,13 +185,27 @@ namespace Go
                     bool? scoredStone = scoredTerritory[x, y];
                     if (stone is not null)
                     {
+                        double opacity;
+                        if (!game.GameOver)
+                        {
+                            opacity = 1.0;
+                        }
+                        else if (game.AwaitingDeadStoneRemoval)
+                        {
+                            // Show stones that have been marked dead as transparent
+                            opacity = inProcessDeadStoneBoard is not null && inProcessDeadStoneBoard[x, y] is null ? 0.4 : 1.0;
+                        }
+                        else
+                        {
+                            // Placed stones aren't counted in territory scoring, so make them transparent when game ends
+                            opacity = game.CurrentScoring == ScoringSystem.Territory ? 0.4 : 1.0;
+                        }
                         Ellipse newStone = new()
                         {
                             Width = tileWidth,
                             Height = tileHeight,
                             Fill = stone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor),
-                            // Placed stones aren't counted in territory scoring, so make them transparent when game ends
-                            Opacity = game is { GameOver: true, CurrentScoring: ScoringSystem.Territory } ? 0.4 : 1.0
+                            Opacity = opacity
                         };
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);
@@ -380,14 +395,41 @@ namespace Go
         {
             if (game.GameOver)
             {
-                double finalScore = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
-                string message = finalScore switch
+                if (game.AwaitingDeadStoneRemoval)
                 {
-                    > 0 => $"Black wins by {finalScore} point{(finalScore != 1 ? "s" : "")}.",
-                    < 0 => $"White wins by {-finalScore} point{(finalScore != -1 ? "s" : "")}.",
-                    _ => "The game is a draw"
-                };
-                _ = MessageBox.Show(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBoxResult result = MessageBox.Show(
+                        "Both players have passed their turn." + Environment.NewLine +
+                        "If you agree to end the game now, click 'Yes'. " + Environment.NewLine +
+                        "If you wish to continue play instead, click 'No'.",
+                        "Two passes", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    if (result == MessageBoxResult.No)
+                    {
+                        game.GameOver = false;
+                        game.AwaitingDeadStoneRemoval = false;
+                        inProcessDeadStoneBoard = null;
+                    }
+                    else
+                    {
+                        inProcessDeadStoneBoard = game.Board.TwoDimensionalClone();
+                        _ = MessageBox.Show(
+                            "To mark a group of stones as dead, click on them." + Environment.NewLine +
+                            "To revert a group to being alive, click it again. " + Environment.NewLine +
+                            "Once you've finished, press the Pass Turn button again. ",
+                            "Dead stone removal", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    UpdateGameDisplay();
+                }
+                else
+                {
+                    double finalScore = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
+                    string message = finalScore switch
+                    {
+                        > 0 => $"Black wins by {finalScore} point{(finalScore != 1 ? "s" : "")}.",
+                        < 0 => $"White wins by {-finalScore} point{(finalScore != -1 ? "s" : "")}.",
+                        _ => "The game is a draw"
+                    };
+                    _ = MessageBox.Show(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
         }
 
@@ -479,6 +521,7 @@ namespace Go
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
             game = new GoGame(boardWidth, boardHeight, ScoringSystem.Area);
+            inProcessDeadStoneBoard = null;
             currentBestMove = null;
             manuallyEvaluating = false;
             blackEvaluation.Content = "?";
@@ -529,20 +572,34 @@ namespace Go
             }
             if (e.ChangedButton == MouseButton.Left)
             {
-                if (game.GameOver)
-                {
-                    return;
-                }
                 System.Drawing.Point destination = GetCoordFromCanvasPoint(mousePos);
-                bool success = game.PlaceStone(destination);
-                if (success)
+                if (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null)
                 {
-                    currentBestMove = null;
-                    UpdateGameDisplay();
-                    movesScroll.ScrollToBottom();
-                    PushEndgameMessage();
-                    await CheckComputerMove();
-                    return;
+                    if (inProcessDeadStoneBoard[destination.X, destination.Y] is not null)
+                    {
+                        BoardAnalysis.FloodFillArea(inProcessDeadStoneBoard, destination, null);
+                    }
+                    else if (game.Board[destination.X, destination.Y] is not null)
+                    {
+                        BoardAnalysis.FloodFillArea(inProcessDeadStoneBoard, destination, game.Board[destination.X, destination.Y], game.Board);
+                    }
+                }
+                else
+                {
+                    if (game.GameOver)
+                    {
+                        return;
+                    }
+                    bool success = game.PlaceStone(destination);
+                    if (success)
+                    {
+                        currentBestMove = null;
+                        UpdateGameDisplay();
+                        movesScroll.ScrollToBottom();
+                        PushEndgameMessage();
+                        await CheckComputerMove();
+                        return;
+                    }
                 }
             }
             else
@@ -636,6 +693,7 @@ namespace Go
             if (customDialog.GeneratedGame is not null)
             {
                 game = customDialog.GeneratedGame;
+                inProcessDeadStoneBoard = null;
                 blackIsComputer = customDialog.BlackIsComputer;
                 whiteIsComputer = customDialog.WhiteIsComputer;
                 currentBestMove = null;
@@ -680,6 +738,7 @@ namespace Go
                     game = game.PreviousGameState!;
                 }
 
+                inProcessDeadStoneBoard = null;
                 currentBestMove = null;
                 blackEvaluation.Content = "?";
                 whiteEvaluation.Content = "?";
@@ -705,6 +764,14 @@ namespace Go
                 movesScroll.ScrollToBottom();
                 PushEndgameMessage();
                 await CheckComputerMove();
+            }
+            else if (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null)
+            {
+                game.Board = inProcessDeadStoneBoard;
+                game.AwaitingDeadStoneRemoval = false;
+                inProcessDeadStoneBoard = null;
+                UpdateGameDisplay();
+                PushEndgameMessage();
             }
         }
     }

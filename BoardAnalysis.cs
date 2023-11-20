@@ -14,6 +14,19 @@ namespace Go
             new(-1, 0), new(1, 0), new(0, -1), new(0, 1)
         };
 
+        public static T[,] TwoDimensionalClone<T>(this T[,] array)
+        {
+            T[,] arrayClone = new T[array.GetLength(0), array.GetLength(1)];
+            for (int x = 0; x < array.GetLength(0); x++)
+            {
+                for (int y = 0; y < array.GetLength(1); y++)
+                {
+                    arrayClone[x, y] = array[x, y];
+                }
+            }
+            return arrayClone;
+        }
+
         /// <summary>
         /// Fill in empty board intersections that are surrounded by a single colour with that colour.
         /// </summary>
@@ -219,6 +232,51 @@ namespace Go
                 return surroundedStones.Where(s => board[s.X, s.Y] != currentTurnBlack).ToArray();
             }
             return surroundedStones.ToArray();
+        }
+
+        /// <summary>
+        /// Fill in a group of connected board intersections with a given value.
+        /// </summary>
+        /// <param name="sourceBoard">If not <see langword="null"/>, will be used as the board to check existing pieces.</param>
+        /// <remarks>This method modifies the <paramref name="board"/> parameter in-place.</remarks>
+        public static void FloodFillArea(bool?[,] board, Point startPoint, bool? fillValue, bool?[,]? sourceBoard = null)
+        {
+            int boardWidth = board.GetLength(0);
+            int boardHeight = board.GetLength(1);
+            sourceBoard ??= board;
+
+            HashSet<Point> scannedPoints = new();
+            bool? startingColour = sourceBoard[startPoint.X, startPoint.Y];
+            Queue<Point> pointsQueue = new();
+            pointsQueue.Enqueue(startPoint);
+            while (pointsQueue.TryDequeue(out Point pt))
+            {
+                if (!scannedPoints.Add(pt))
+                {
+                    // Skip already scanned points
+                    continue;
+                }
+
+                board[pt.X, pt.Y] = fillValue;
+
+                // Scan surrounding liberties
+                foreach (Point diff in Liberties)
+                {
+                    Point adjPoint = new(pt.X + diff.X, pt.Y + diff.Y);
+                    if (adjPoint.X < 0 || adjPoint.Y < 0
+                        || adjPoint.X >= boardWidth || adjPoint.Y >= boardHeight)
+                    {
+                        // Out of bounds
+                        continue;
+                    }
+
+                    bool? adjColour = sourceBoard[adjPoint.X, adjPoint.Y];
+                    if (adjColour == startingColour)
+                    {
+                        pointsQueue.Enqueue(adjPoint);
+                    }
+                }
+            }
         }
 
         public readonly struct PossibleMove

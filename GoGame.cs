@@ -19,11 +19,12 @@ namespace Go
         /// <see langword="true"/> = black stone,
         /// <see langword="false"/> = white stone
         /// </summary>
-        public bool?[,] Board { get; }
+        public bool?[,] Board { get; internal set; }
         public string InitialState { get; }
 
         public bool CurrentTurnBlack { get; private set; }
-        public bool GameOver { get; private set; }
+        public bool GameOver { get; set; }
+        public bool AwaitingDeadStoneRemoval { get; set; }
 
         public ScoringSystem CurrentScoring { get; }
 
@@ -54,6 +55,7 @@ namespace Go
         {
             CurrentTurnBlack = true;
             GameOver = false;
+            AwaitingDeadStoneRemoval = false;
             CurrentScoring = scoring;
 
             Moves = new List<Point>();
@@ -70,8 +72,8 @@ namespace Go
         /// <summary>
         /// Create a new instance of a go game, setting each game parameter to a non-default value
         /// </summary>
-        public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver, ScoringSystem scoring,
-            List<Point> moves, List<string> moveText, int blackCaptures,
+        public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver, bool awaitingDeadStoneRemoval,
+            ScoringSystem scoring, List<Point> moves, List<string> moveText, int blackCaptures,
             int whiteCaptures, HashSet<string> previousBoards,
             string? initialState, GoGame? previousGameState, double komiCompensation)
         {
@@ -79,6 +81,7 @@ namespace Go
 
             CurrentTurnBlack = currentTurnBlack;
             GameOver = gameOver;
+            AwaitingDeadStoneRemoval = awaitingDeadStoneRemoval;
             CurrentScoring = scoring;
             Moves = moves;
             MoveText = moveText;
@@ -97,17 +100,8 @@ namespace Go
         /// </summary>
         public GoGame Clone(bool clonePreviousState)
         {
-            bool?[,] boardClone = new bool?[Board.GetLength(0), Board.GetLength(1)];
-            for (int x = 0; x < boardClone.GetLength(0); x++)
-            {
-                for (int y = 0; y < boardClone.GetLength(1); y++)
-                {
-                    boardClone[x, y] = Board[x, y];
-                }
-            }
-
-            return new GoGame(boardClone, CurrentTurnBlack, GameOver, CurrentScoring, new List<Point>(Moves),
-                new List<string>(MoveText), BlackCaptures, WhiteCaptures,
+            return new GoGame(Board.TwoDimensionalClone(), CurrentTurnBlack, GameOver, AwaitingDeadStoneRemoval, CurrentScoring,
+                new List<Point>(Moves), new List<string>(MoveText), BlackCaptures, WhiteCaptures,
                 new HashSet<string>(PreviousBoards), InitialState,
                 clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState, KomiCompensation);
         }
@@ -187,6 +181,7 @@ namespace Go
             if (Moves.Count >= 2 && Moves[^2].X == -1)
             {
                 GameOver = true;
+                AwaitingDeadStoneRemoval = true;
                 return true;
             }
             return false;
@@ -353,7 +348,7 @@ namespace Go
             };
 
             // Board string doesn't define what the previous moves were, so the moves list starts empty
-            return new GoGame(board, currentTurnBlack, fields[3].Length == 2, scoring,
+            return new GoGame(board, currentTurnBlack, fields[3].Length == 2, false, scoring,
                 new List<Point>(), new List<string>(), blackCaptures, whiteCaptures,
                 new HashSet<string>(), null, null, komiCompensation);
         }

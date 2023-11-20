@@ -200,7 +200,7 @@ namespace Go
                 scoring = ScoringSystem.Stone;
             }
 
-            GeneratedGame = new GoGame(Board, currentTurnBlack, false, scoring,
+            GeneratedGame = new GoGame(Board, currentTurnBlack, false, false, scoring,
                 new List<System.Drawing.Point>(), new List<string>(),
                 (int)blackCapturesSlider.Value, (int)whiteCapturesSlider.Value,
                 new HashSet<string>(), null, null, komiCompensation);
