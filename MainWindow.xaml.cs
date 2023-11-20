@@ -568,8 +568,8 @@ namespace Go
 
         private async void evaluation_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (currentBestMove is not null || (game.CurrentTurnBlack && blackIsComputer)
-                || (!game.CurrentTurnBlack && whiteIsComputer))
+            if (currentBestMove is not null || game.GameOver
+                || (game.CurrentTurnBlack && blackIsComputer) || (!game.CurrentTurnBlack && whiteIsComputer))
             {
                 return;
             }
@@ -679,6 +679,14 @@ namespace Go
                     // Reverse two moves if the opponent is computer controlled
                     game = game.PreviousGameState!;
                 }
+
+                currentBestMove = null;
+                blackEvaluation.Content = "?";
+                whiteEvaluation.Content = "?";
+                manuallyEvaluating = false;
+                cancelMoveComputation.Cancel();
+                cancelMoveComputation = new CancellationTokenSource();
+
                 UpdateGameDisplay();
                 await CheckComputerMove();
             }
