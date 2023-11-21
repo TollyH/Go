@@ -14,6 +14,8 @@ namespace Go
             new(-1, 0), new(1, 0), new(0, -1), new(0, 1)
         };
 
+        private static readonly Random rng = new();
+
         public static T[,] TwoDimensionalClone<T>(this T[,] array)
         {
             T[,] arrayClone = new T[array.GetLength(0), array.GetLength(1)];
@@ -26,7 +28,6 @@ namespace Go
             }
             return arrayClone;
         }
-
         /// <summary>
         /// Fill in empty board intersections that are surrounded by a single colour with that colour.
         /// </summary>
@@ -300,9 +301,10 @@ namespace Go
         /// Use <see cref="EvaluatePossibleMoves"/> to find the best possible move in the current state of the game
         /// </summary>
         /// <param name="maxDepth">The maximum number of half-moves in the future to search</param>
-        public static async Task<PossibleMove?> EstimateBestPossibleMove(GoGame game, int maxDepth, CancellationToken cancellationToken)
+        /// <param name="randomise">Whether or not to randomise the order of moves that have the same score</param>
+        public static async Task<PossibleMove?> EstimateBestPossibleMove(GoGame game, int maxDepth, bool randomise, CancellationToken cancellationToken)
         {
-            PossibleMove[] moves = await EvaluatePossibleMoves(game, maxDepth, cancellationToken);
+            PossibleMove[] moves = await EvaluatePossibleMoves(game, maxDepth, randomise, cancellationToken);
             PossibleMove? bestMove = null;
             foreach (PossibleMove potentialMove in moves)
             {
@@ -334,8 +336,9 @@ namespace Go
         /// Evaluate each possible move in the current state of the game
         /// </summary>
         /// <param name="maxDepth">The maximum number of half-moves in the future to search</param>
+        /// <param name="randomise">Whether or not to randomise the order of moves that have the same score</param>
         /// <returns>An array of all possible moves, with information on board value and ability to checkmate</returns>
-        public static async Task<PossibleMove[]> EvaluatePossibleMoves(GoGame game, int maxDepth, CancellationToken cancellationToken)
+        public static async Task<PossibleMove[]> EvaluatePossibleMoves(GoGame game, int maxDepth, bool randomise, CancellationToken cancellationToken)
         {
             List<Task<PossibleMove?>> evaluationTasks = new();
 
@@ -383,8 +386,14 @@ namespace Go
             }
             try
             {
+                IEnumerable<PossibleMove> moves =
+                    (await Task.WhenAll(evaluationTasks)).Where(m => m is not null).Select(m => m!.Value);
+                if (randomise)
+                {
+                    return moves.OrderBy(_ => rng.Next()).ToArray();
+                }
                 // Remove default moves from return value
-                return (await Task.WhenAll(evaluationTasks)).Where(m => m is not null).Select(m => m!.Value).ToArray();
+                return moves.ToArray();
             }
             catch (TaskCanceledException)
             {

@@ -467,7 +467,7 @@ namespace Go
         /// </summary>
         private async Task<BoardAnalysis.PossibleMove?> GetEngineMove(CancellationToken cancellationToken)
         {
-            BoardAnalysis.PossibleMove? bestMove = await BoardAnalysis.EstimateBestPossibleMove(game, 2, cancellationToken);
+            BoardAnalysis.PossibleMove? bestMove = await BoardAnalysis.EstimateBestPossibleMove(game, 2, true, cancellationToken);
             return bestMove;
         }
 
