@@ -13,14 +13,14 @@ namespace Go
     /// </summary>
     public partial class CustomGame : Window
     {
-        public bool?[,] Board { get; private set; }
+        public int?[,] Board { get; private set; }
 
         public GoGame? GeneratedGame { get; private set; }
-        public bool BlackIsComputer { get; private set; }
-        public bool WhiteIsComputer { get; private set; }
 
         private double tileWidth;
         private double tileHeight;
+
+        private int[] captures;
 
         public CustomGame()
         {
@@ -28,7 +28,8 @@ namespace Go
 
             InitializeComponent();
 
-            Board = new bool?[19, 19];
+            Board = new int?[19, 19];
+            captures = new int[2];
         }
 
         public void UpdateBoard()
@@ -45,14 +46,14 @@ namespace Go
             {
                 for (int y = 0; y < boardHeight; y++)
                 {
-                    bool? stone = Board[x, y];
+                    int? stone = Board[x, y];
                     if (stone is not null)
                     {
                         Ellipse newStone = new()
                         {
                             Width = tileWidth,
                             Height = tileHeight,
-                            Fill = stone.Value ? Brushes.Black : Brushes.White
+                            Fill = MainWindow.PieceColours[stone.Value]
                         };
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, y * tileHeight);
@@ -176,16 +177,6 @@ namespace Go
 
         private void startButton_Click(object sender, RoutedEventArgs e)
         {
-            BlackIsComputer = computerSelectBlack.IsChecked ?? false;
-            WhiteIsComputer = computerSelectWhite.IsChecked ?? false;
-            bool currentTurnBlack = turnSelectBlack.IsChecked ?? false;
-
-            double komiCompensation = (int)komiSlider.Value;
-            if (komiHalfPoint.IsChecked ?? false)
-            {
-                komiCompensation += 0.5;
-            }
-
             ScoringSystem scoring;
             if (scoringSelectArea.IsChecked ?? false)
             {
@@ -200,10 +191,9 @@ namespace Go
                 scoring = ScoringSystem.Stone;
             }
 
-            GeneratedGame = new GoGame(Board, currentTurnBlack, false, false, scoring,
+            GeneratedGame = new GoGame(Board, (int)turnSelect.Value, false, false, scoring,
                 new List<System.Drawing.Point>(), new List<string>(),
-                (int)blackCapturesSlider.Value, (int)whiteCapturesSlider.Value,
-                new HashSet<string>(), null, null, komiCompensation);
+                captures, new HashSet<string>(), null, null, (int)playerCountSelect.Value);
             Close();
         }
 
@@ -229,13 +219,22 @@ namespace Go
                 return;
             }
 
-            Board[coord.X, coord.Y] = Board[coord.X, coord.Y] is null ? e.ChangedButton == MouseButton.Left : null;
-
-            foreach (System.Drawing.Point stone in
-                BoardAnalysis.GetSurroundedStones(Board, e.ChangedButton == MouseButton.Left))
+            if (e.ChangedButton == MouseButton.Left)
             {
-                // Remove stones that would be captured as soon as game starts
-                Board[stone.X, stone.Y] = null;
+                int playerCount = (int)playerCountSelect.Value;
+                int? currentColour = Board[coord.X, coord.Y];
+                Board[coord.X, coord.Y] = currentColour is null ? 0 : (currentColour.Value + 1) % playerCount;
+
+                foreach (System.Drawing.Point stone in
+                    BoardAnalysis.GetSurroundedStones(Board, (Board[coord.X, coord.Y]!.Value + 1) % playerCount))
+                {
+                    // Remove stones that would be captured as soon as game starts
+                    Board[stone.X, stone.Y] = null;
+                }
+            }
+            else
+            {
+                Board[coord.X, coord.Y] = null;
             }
 
             UpdateBoard();
@@ -248,8 +247,6 @@ namespace Go
 
         private void submitFenButton_Click(object sender, RoutedEventArgs e)
         {
-            BlackIsComputer = computerSelectBlack.IsChecked ?? false;
-            WhiteIsComputer = computerSelectWhite.IsChecked ?? false;
             try
             {
                 GeneratedGame = GoGame.FromBoardString(boardTextInput.Text);
@@ -283,10 +280,7 @@ namespace Go
             boardWidthHeader.Content = $"Width ({newWidth})";
             boardHeightHeader.Content = $"Height ({newHeight})";
 
-            blackCapturesSlider.Maximum = Math.Floor((double)newWidth * newHeight / 2);
-            whiteCapturesSlider.Maximum = Math.Ceiling((double)newWidth * newHeight / 2);
-
-            bool?[,] newBoard = new bool?[newWidth, newHeight];
+            int?[,] newBoard = new int?[newWidth, newHeight];
             for (int x = 0; x < newWidth && x < Board.GetLength(0); x++)
             {
                 for (int y = 0; y < newHeight && y < Board.GetLength(1); y++)
@@ -298,23 +292,70 @@ namespace Go
             UpdateBoard();
         }
 
-        private void CapturesSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void playerCountSelect_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (!IsInitialized)
             {
                 return;
             }
-            blackCapturesHeader.Content = $"Black ({(int)blackCapturesSlider.Value})";
-            whiteCapturesHeader.Content = $"White ({(int)whiteCapturesSlider.Value})";
+            int newPlayerCount = (int)playerCountSelect.Value;
+
+            playerCapturesCombo.Items.Clear();
+            for (int i = 0; i < newPlayerCount;)
+            {
+                _ = playerCapturesCombo.Items.Add(new ComboBoxItem()
+                {
+                    Content = $"Player {++i}"
+                });
+            }
+            playerCapturesCombo.SelectedIndex = 0;
+
+            turnSelect.Maximum = newPlayerCount - 1;
+
+            playerCountHeader.Content = $"Player Count ({newPlayerCount})";
+
+            captures = new int[newPlayerCount];
+
+            for (int x = 0; x < Board.GetLength(0); x++)
+            {
+                for (int y = 0; y < Board.GetLength(1); y++)
+                {
+                    // Remove pieces for players than no longer exist
+                    if (Board[x, y] is { } value && value >= newPlayerCount)
+                    {
+                        Board[x, y] = null;
+                    }
+                }
+            }
+
+            UpdateBoard();
         }
 
-        private void KomiSlider_OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void playerCapturesCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsInitialized || playerCapturesCombo.SelectedIndex == -1 || playerCapturesCombo.SelectedIndex >= captures.Length)
+            {
+                return;
+            }
+            capturesSlider.Value = captures[playerCapturesCombo.SelectedIndex];
+        }
+
+        private void turnSelect_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (!IsInitialized)
             {
                 return;
             }
-            komiHeader.Content = (int)komiSlider.Value;
+            turnHeader.Content = $"Current Turn ({(int)turnSelect.Value + 1})";
+        }
+
+        private void capturesSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+            captures[playerCapturesCombo.SelectedIndex] = (int)capturesSlider.Value;
         }
     }
 }

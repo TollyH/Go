@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Text;
 
 namespace Go
@@ -16,13 +17,13 @@ namespace Go
     {
         /// <summary>
         /// <see langword="null"/> = no stone,
-        /// <see langword="true"/> = black stone,
-        /// <see langword="false"/> = white stone
+        /// <see langword="int"/> = player index (e.g. 0 = black, 1 = white)
         /// </summary>
-        public bool?[,] Board { get; internal set; }
+        public int?[,] Board { get; internal set; }
         public string InitialState { get; }
+        public int PlayerCount { get; }
 
-        public bool CurrentTurnBlack { get; private set; }
+        public int CurrentTurn { get; private set; }
         public bool GameOver { get; set; }
         public bool AwaitingDeadStoneRemoval { get; set; }
 
@@ -35,15 +36,9 @@ namespace Go
         public List<string> MoveText { get; }
         public GoGame? PreviousGameState { get; private set; }
         /// <summary>
-        /// The number of captures black has made (i.e. the number of white stones removed)
+        /// The number of captures each player has made (i.e. the number of other stones removed)
         /// </summary>
-        public int BlackCaptures { get; set; }
-        /// <summary>
-        /// The number of captures white has made (i.e. the number of black stones removed)
-        /// </summary>
-        public int WhiteCaptures { get; set; }
-
-        public double KomiCompensation { get; }
+        public int[] Captures { get; set; }
 
         // Used to detect repetition
         public HashSet<string> PreviousBoards { get; }
@@ -51,9 +46,16 @@ namespace Go
         /// <summary>
         /// Create a new standard go game with all values at their defaults
         /// </summary>
-        public GoGame(int boardWidth, int boardHeight, ScoringSystem scoring, double komiCompensation = 0)
+        public GoGame(int boardWidth, int boardHeight, ScoringSystem scoring, int playerCount = 2)
         {
-            CurrentTurnBlack = true;
+            if (playerCount is < 2 or > 10)
+            {
+                throw new ArgumentException("There must be between 2 and 10 players in a game.");
+            }
+
+            PlayerCount = playerCount;
+
+            CurrentTurn = 0;
             GameOver = false;
             AwaitingDeadStoneRemoval = false;
             CurrentScoring = scoring;
@@ -63,36 +65,36 @@ namespace Go
 
             PreviousBoards = new HashSet<string>();
 
-            Board = new bool?[boardWidth, boardHeight];
+            Board = new int?[boardWidth, boardHeight];
+
+            Captures = new int[playerCount];
 
             InitialState = ToString();
-            KomiCompensation = komiCompensation;
         }
 
         /// <summary>
         /// Create a new instance of a go game, setting each game parameter to a non-default value
         /// </summary>
-        public GoGame(bool?[,] board, bool currentTurnBlack, bool gameOver, bool awaitingDeadStoneRemoval,
-            ScoringSystem scoring, List<Point> moves, List<string> moveText, int blackCaptures,
-            int whiteCaptures, HashSet<string> previousBoards,
-            string? initialState, GoGame? previousGameState, double komiCompensation)
+        internal GoGame(int?[,] board, int currentTurn, bool gameOver, bool awaitingDeadStoneRemoval,
+            ScoringSystem scoring, List<Point> moves, List<string> moveText, int[] captures, HashSet<string> previousBoards,
+            string? initialState, GoGame? previousGameState, int playerCount)
         {
+            PlayerCount = playerCount;
+
             Board = board;
 
-            CurrentTurnBlack = currentTurnBlack;
+            CurrentTurn = currentTurn;
             GameOver = gameOver;
             AwaitingDeadStoneRemoval = awaitingDeadStoneRemoval;
             CurrentScoring = scoring;
             Moves = moves;
             MoveText = moveText;
-            BlackCaptures = blackCaptures;
-            WhiteCaptures = whiteCaptures;
+            Captures = captures;
             PreviousBoards = previousBoards;
             _ = PreviousBoards.Add(GetBoardString().ToString());
 
             InitialState = initialState ?? ToString();
             PreviousGameState = previousGameState;
-            KomiCompensation = komiCompensation;
         }
 
         /// <summary>
@@ -100,37 +102,29 @@ namespace Go
         /// </summary>
         public GoGame Clone(bool clonePreviousState)
         {
-            return new GoGame(Board.TwoDimensionalClone(), CurrentTurnBlack, GameOver, AwaitingDeadStoneRemoval, CurrentScoring,
-                new List<Point>(Moves), new List<string>(MoveText), BlackCaptures, WhiteCaptures,
+            return new GoGame(Board.TwoDimensionalClone(), CurrentTurn, GameOver, AwaitingDeadStoneRemoval, CurrentScoring,
+                new List<Point>(Moves), new List<string>(MoveText), Captures.ToArray(),
                 new HashSet<string>(PreviousBoards), InitialState,
-                clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState, KomiCompensation);
+                clonePreviousState ? PreviousGameState?.Clone(true) : PreviousGameState, PlayerCount);
         }
 
         /// <summary>
         /// Remove fully surrounded stones from the board.
         /// </summary>
-        /// <returns>The number of black and white stones removed respectively.</returns>
-        public (int RemovedBlack, int RemovedWhite) RemoveSurroundedStones()
+        /// <returns>The number of stones removed.</returns>
+        public int RemoveSurroundedStones()
         {
-            int removedBlack = 0;
-            int removedWhite = 0;
-            foreach (Point coord in BoardAnalysis.GetSurroundedStones(Board, CurrentTurnBlack))
+            int removed = 0;
+            foreach (Point coord in BoardAnalysis.GetSurroundedStones(Board, CurrentTurn))
             {
-                bool? stone = Board[coord.X, coord.Y];
+                int? stone = Board[coord.X, coord.Y];
                 if (stone is not null)
                 {
-                    if (stone.Value)
-                    {
-                        removedBlack++;
-                    }
-                    else
-                    {
-                        removedWhite++;
-                    }
+                    removed++;
                 }
                 Board[coord.X, coord.Y] = null;
             }
-            return (removedBlack, removedWhite);
+            return removed;
         }
 
         /// <summary>
@@ -151,7 +145,7 @@ namespace Go
             // Try making move to see if it results in suicide or repetition
             GoGame clone = Clone(clonePreviousState: false);
             _ = clone.PlaceStone(destination, forceMove: true, updateMoveText: false);
-            bool suicide = CurrentTurnBlack ? clone.WhiteCaptures > WhiteCaptures : clone.BlackCaptures > BlackCaptures;
+            bool suicide = clone.Board.OfType<int>().Count(p => p == CurrentTurn) < Board.OfType<int>().Count(p => p == CurrentTurn);
             bool repetition = PreviousBoards.Contains(clone.GetBoardString().ToString());
             return !suicide && !repetition;
         }
@@ -171,14 +165,14 @@ namespace Go
             {
                 // Used for move undoing
                 PreviousGameState = Clone(true);
-                string newMove = CurrentTurnBlack ? "BP" : "WP";
+                string newMove = $"{CurrentTurn + 1}:P";
                 MoveText.Add(newMove);
             }
 
             Moves.Add(new Point(-1, -1));
-            CurrentTurnBlack = !CurrentTurnBlack;
+            CurrentTurn = ++CurrentTurn % PlayerCount;
 
-            if (Moves.Count >= 2 && Moves[^2].X == -1)
+            if (Moves.Count >= PlayerCount && Moves.TakeLast(PlayerCount).All(m => m.X == -1))
             {
                 GameOver = true;
                 AwaitingDeadStoneRemoval = true;
@@ -207,19 +201,15 @@ namespace Go
             {
                 // Used for move undoing
                 PreviousGameState = Clone(true);
-                string newMove = CurrentTurnBlack ? "B" : "W";
-                newMove += $"{destination.X + 1}-{Board.GetLength(1) - destination.Y}";
-                MoveText.Add(newMove);
+                MoveText.Add($"{CurrentTurn + 1}:{destination.X + 1}-{Board.GetLength(1) - destination.Y}");
             }
             Moves.Add(destination);
 
-            Board[destination.X, destination.Y] = CurrentTurnBlack;
+            Board[destination.X, destination.Y] = CurrentTurn;
 
-            (int removedBlack, int removedWhite) = RemoveSurroundedStones();
-            BlackCaptures += removedWhite;
-            WhiteCaptures += removedBlack;
+            Captures[CurrentTurn] += RemoveSurroundedStones();
 
-            CurrentTurnBlack = !CurrentTurnBlack;
+            CurrentTurn = ++CurrentTurn % PlayerCount;
             _ = PreviousBoards.Add(GetBoardString().ToString());
 
             return true;
@@ -233,8 +223,8 @@ namespace Go
             {
                 for (int x = 0; x < Board.GetLength(0); x++)
                 {
-                    bool? stone = Board[x, y];
-                    _ = stone is null ? result.Append('n') : result.Append(stone.Value ? 'b' : 'w');
+                    int? stone = Board[x, y];
+                    _ = stone is null ? result.Append('n') : result.Append(stone.Value);
                 }
                 if (y > 0)
                 {
@@ -260,9 +250,8 @@ namespace Go
                 _ => 'a'
             };
 
-            _ = result.Append(' ').Append(BlackCaptures).Append('/').Append(WhiteCaptures)
-                .Append(' ').Append(KomiCompensation)
-                .Append(CurrentTurnBlack ? " b" : " w")
+            _ = result.Append(' ').Append(string.Join('/', Captures))
+                .Append(' ').Append(CurrentTurn)
                 .Append(' ').Append(scoring);
 
             if (GameOver)
@@ -279,9 +268,9 @@ namespace Go
         public static GoGame FromBoardString(string boardString)
         {
             string[] fields = boardString.Split(' ');
-            if (fields.Length != 5)
+            if (fields.Length != 4)
             {
-                throw new FormatException("A valid board text state requires 5 fields separated by spaces");
+                throw new FormatException("A valid board text state requires 4 fields separated by spaces");
             }
 
             string[] ranks = fields[0].Split('/');
@@ -296,19 +285,25 @@ namespace Go
                 throw new FormatException("A valid board must have at least 2 vertical columns");
             }
 
-            bool?[,] board = new bool?[ranks[0].Length, ranks.Length];
+            int?[,] board = new int?[ranks[0].Length, ranks.Length];
             for (int r = 0; r < ranks.Length; r++)
             {
                 int fileIndex = 0;
                 foreach (char stoneChar in ranks[r])
                 {
-                    board[fileIndex, maxRankIndex - r] = stoneChar switch
+                    if (stoneChar == 'n')
                     {
-                        'b' => true,
-                        'w' => false,
-                        'n' => null,
-                        _ => throw new FormatException($"{stoneChar} is not a valid stone character"),
-                    };
+                        board[fileIndex, maxRankIndex - r] = null;
+                    }
+                    else
+                    {
+                        if (stoneChar is < '0' or > '9')
+                        {
+                            throw new FormatException("Each character in the board must be a digit between 0 and 9 or the character 'n'");
+                        }
+                        // Convert ASCII digit character to number
+                        board[fileIndex, maxRankIndex - r] = stoneChar - '0';
+                    }
                     fileIndex++;
                 }
                 if (fileIndex != ranks[0].Length)
@@ -317,29 +312,29 @@ namespace Go
                 }
             }
 
-            string[] captures = fields[1].Split('/');
-            if (captures.Length != 2)
+            string[] captureStrings = fields[1].Split('/');
+            int[] captures = new int[captureStrings.Length];
+            for (int i = 0; i < captureStrings.Length; i++)
             {
-                throw new FormatException("Captures field must contain two numbers separated by a slash");
-            }
-            if (!int.TryParse(captures[0], out int blackCaptures) || !int.TryParse(captures[1], out int whiteCaptures))
-            {
-                throw new FormatException("Captures field must contain two numbers separated by a slash");
-            }
-
-            if (!double.TryParse(fields[2], out double komiCompensation))
-            {
-                throw new FormatException("Komi compensation field must be a valid decimal number");
+                if (!int.TryParse(captureStrings[i], out int removed))
+                {
+                    throw new FormatException("Captures field must contain numbers separated by a slashes");
+                }
+                captures[i] = removed;
             }
 
-            if (fields[3].Length != 1 && (fields[3].Length != 2 || fields[3][1] != '!'))
+            if (fields[2].Length != 1 && (fields[2].Length != 2 || fields[2][1] != '!'))
             {
-                throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark");
+                throw new FormatException("Current turn specifier must be a digit between 0 and 9, optionally ending with an exclamation mark");
             }
-            bool currentTurnBlack = fields[3][0] == 'b' || (fields[3][0] == 'w' ? false
-                : throw new FormatException("Current turn specifier must be either w or b, optionally ending with an exclamation mark"));
+            if (fields[2][0] is < '0' or > '9')
+            {
+                throw new FormatException("Current turn specifier must be a digit between 0 and 9, optionally ending with an exclamation mark");
+            }
+            // Convert ASCII digit character to number
+            int currentTurn = fields[2][0] - '0';
 
-            ScoringSystem scoring = fields[4] switch
+            ScoringSystem scoring = fields[3] switch
             {
                 "a" => ScoringSystem.Area,
                 "t" => ScoringSystem.Territory,
@@ -348,9 +343,9 @@ namespace Go
             };
 
             // Board string doesn't define what the previous moves were, so the moves list starts empty
-            return new GoGame(board, currentTurnBlack, fields[3].Length == 2, false, scoring,
-                new List<Point>(), new List<string>(), blackCaptures, whiteCaptures,
-                new HashSet<string>(), null, null, komiCompensation);
+            return new GoGame(board, currentTurn, fields[2].Length == 2, false, scoring,
+                new List<Point>(), new List<string>(), captures,
+                new HashSet<string>(), null, null, captures.Length);
         }
     }
 }

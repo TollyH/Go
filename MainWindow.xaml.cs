@@ -2,8 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,21 +16,19 @@ namespace Go
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static readonly SolidColorBrush[] PieceColours = new SolidColorBrush[10]
+        {
+            Brushes.Black, Brushes.White, Brushes.Red, Brushes.Blue, Brushes.Green,
+            Brushes.Aquamarine, Brushes.Magenta, Brushes.Yellow, Brushes.BlueViolet, Brushes.Coral
+        };
+
         private GoGame game = new(19, 19, ScoringSystem.Area);
-        private bool?[,]? inProcessDeadStoneBoard = null;
+        private int?[,]? inProcessDeadStoneBoard = null;
         private readonly Settings config;
 
         private readonly HashSet<System.Drawing.Point> squareHighlights = new();
         private readonly HashSet<(System.Drawing.Point, System.Drawing.Point)> lineHighlights = new();
         private System.Drawing.Point? mouseDownStartPoint = null;
-
-        private bool blackIsComputer = false;
-        private bool whiteIsComputer = false;
-
-        private BoardAnalysis.PossibleMove? currentBestMove = null;
-        private bool manuallyEvaluating = false;
-
-        private CancellationTokenSource cancelMoveComputation = new();
 
         private double tileWidth;
         private double tileHeight;
@@ -56,7 +53,7 @@ namespace Go
             goGameCanvas.Children.Clear();
             passMenuItem.IsEnabled = !game.GameOver || (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null);
 
-            bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
+            bool boardFlipped = config.FlipBoard && game.CurrentTurn == 1;
 
             int boardWidth = game.Board.GetLength(0);
             int boardHeight = game.Board.GetLength(1);
@@ -64,44 +61,17 @@ namespace Go
             tileWidth = goGameCanvas.ActualWidth / boardWidth;
             tileHeight = goGameCanvas.ActualHeight / boardHeight;
 
-            blackCaptures.Content = game.BlackCaptures;
-            whiteCaptures.Content = game.WhiteCaptures;
-
-            if (currentBestMove is null && !manuallyEvaluating)
-            {
-                if (game.CurrentTurnBlack && !blackIsComputer)
-                {
-                    blackEvaluation.Content = "?";
-                }
-                else if (!whiteIsComputer)
-                {
-                    whiteEvaluation.Content = "?";
-                }
-            }
+            capturesLabel.Content = game.Captures[game.CurrentTurn];
 
             if (boardFlipped)
             {
-                Grid.SetColumn(blackEvaluationView, 2);
-                Grid.SetRow(blackEvaluationView, 0);
-                Grid.SetColumn(whiteEvaluationView, 0);
-                Grid.SetRow(whiteEvaluationView, 2);
-
-                Grid.SetColumn(blackCapturesView, 0);
-                Grid.SetRow(blackCapturesView, 0);
-                Grid.SetColumn(whiteCapturesView, 2);
-                Grid.SetRow(whiteCapturesView, 2);
+                Grid.SetColumn(capturesView, 0);
+                Grid.SetRow(capturesView, 0);
             }
             else
             {
-                Grid.SetColumn(blackEvaluationView, 0);
-                Grid.SetRow(blackEvaluationView, 2);
-                Grid.SetColumn(whiteEvaluationView, 2);
-                Grid.SetRow(whiteEvaluationView, 0);
-
-                Grid.SetColumn(blackCapturesView, 2);
-                Grid.SetRow(blackCapturesView, 2);
-                Grid.SetColumn(whiteCapturesView, 0);
-                Grid.SetRow(whiteCapturesView, 0);
+                Grid.SetColumn(capturesView, 2);
+                Grid.SetRow(capturesView, 2);
             }
 
             movesPanel.Children.Clear();
@@ -134,39 +104,8 @@ namespace Go
 
             }
 
-            if (currentBestMove is not null)
-            {
-                if (currentBestMove.Value.Destination.X >= 0)
-                {
-                    passMenuItem.Background = null;
-                    Rectangle bestMoveDstHighlight = new()
-                    {
-                        Width = tileWidth,
-                        Height = tileHeight,
-                        Fill = new SolidColorBrush(config.BestMoveDestinationColor)
-                    };
-                    _ = goGameCanvas.Children.Add(bestMoveDstHighlight);
-                    Canvas.SetBottom(bestMoveDstHighlight,
-                        (boardFlipped
-                            ? boardMaxY - currentBestMove.Value.Destination.Y
-                            : currentBestMove.Value.Destination.Y) * tileHeight);
-                    Canvas.SetLeft(bestMoveDstHighlight,
-                        (boardFlipped
-                            ? boardMaxX - currentBestMove.Value.Destination.X
-                            : currentBestMove.Value.Destination.X) * tileWidth);
-                }
-                else
-                {
-                    passMenuItem.Background = new SolidColorBrush(config.BestMoveDestinationColor);
-                }
-            }
-            else
-            {
-                passMenuItem.Background = null;
-            }
-
             // Used to highlight territory when the game is over
-            bool?[,] scoredTerritory;
+            int?[,] scoredTerritory;
             if (game is { GameOver: true, AwaitingDeadStoneRemoval: false, CurrentScoring: ScoringSystem.Area or ScoringSystem.Territory })
             {
                 scoredTerritory =
@@ -174,15 +113,15 @@ namespace Go
             }
             else
             {
-                scoredTerritory = new bool?[boardWidth, boardHeight];
+                scoredTerritory = new int?[boardWidth, boardHeight];
             }
 
             for (int x = 0; x < boardWidth; x++)
             {
                 for (int y = 0; y < boardHeight; y++)
                 {
-                    bool? stone = game.Board[x, y];
-                    bool? scoredStone = scoredTerritory[x, y];
+                    int? stone = game.Board[x, y];
+                    int? scoredStone = scoredTerritory[x, y];
                     if (stone is not null)
                     {
                         double opacity;
@@ -204,7 +143,7 @@ namespace Go
                         {
                             Width = tileWidth,
                             Height = tileHeight,
-                            Fill = stone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor),
+                            Fill = PieceColours[stone.Value],
                             Opacity = opacity
                         };
                         _ = goGameCanvas.Children.Add(newStone);
@@ -218,7 +157,7 @@ namespace Go
                         {
                             Width = tileWidth / 2,
                             Height = tileHeight / 2,
-                            Fill = scoredStone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor)
+                            Fill = PieceColours[scoredStone.Value]
                         };
                         _ = goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight + (tileHeight / 4));
@@ -398,7 +337,7 @@ namespace Go
                 if (game.AwaitingDeadStoneRemoval)
                 {
                     MessageBoxResult result = MessageBox.Show(
-                        "Both players have passed their turn." + Environment.NewLine +
+                        "All players have passed their turn." + Environment.NewLine +
                         "If you agree to end the game now, click 'Yes'. " + Environment.NewLine +
                         "If you wish to continue play instead, click 'No'.",
                         "Two passes", MessageBoxButton.YesNo, MessageBoxImage.Information);
@@ -421,119 +360,38 @@ namespace Go
                 }
                 else
                 {
-                    double finalScore = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
-                    string message = finalScore switch
+                    int[] finalScores = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
+                    (int Player, int Score) winner = finalScores.Select((score, p) => (p, score)).MaxBy(w => w.score);
+
+                    string message = $"Player {winner.Player + 1} wins!\nScores:";
+                    for (int i = 0; i < finalScores.Length; i++)
                     {
-                        > 0 => $"Black wins by {finalScore} point{(finalScore != 1 ? "s" : "")}.",
-                        < 0 => $"White wins by {-finalScore} point{(finalScore != -1 ? "s" : "")}.",
-                        _ => "The game is a draw"
-                    };
+                        message += $"\n    {i + 1}: {finalScores[i]}";
+                    }
+
                     _ = MessageBox.Show(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
 
-        private void UpdateEvaluationMeter(BoardAnalysis.PossibleMove? bestMove, bool black)
-        {
-            Label toUpdate = black ? blackEvaluation : whiteEvaluation;
-            if (bestMove is null)
-            {
-                toUpdate.Content = "...";
-                toUpdate.ToolTip = null;
-                return;
-            }
-
-            toUpdate.Content = bestMove.Value.EvaluatedFutureValue.ToString("+0.00;-0.00;0.00");
-
-            string convertedBestLine = "";
-            GoGame moveStringGenerator = game.Clone(false);
-            foreach (System.Drawing.Point destination in bestMove.Value.BestLine)
-            {
-                if (destination.X == -1 || destination.Y == -1)
-                {
-                    _ = moveStringGenerator.PassTurn();
-                }
-                else
-                {
-                    _ = moveStringGenerator.PlaceStone(destination, true);
-                }
-                convertedBestLine += " " + moveStringGenerator.MoveText[^1];
-            }
-            toUpdate.ToolTip = convertedBestLine.Trim();
-        }
-
-        /// <summary>
-        /// Get the best move according to either the built-in or external engine, depending on configuration
-        /// </summary>
-        private async Task<BoardAnalysis.PossibleMove?> GetEngineMove(CancellationToken cancellationToken)
-        {
-            BoardAnalysis.PossibleMove? bestMove = await BoardAnalysis.EstimateBestPossibleMove(game, 2, true, cancellationToken);
-            return bestMove;
-        }
-
-        /// <summary>
-        /// Perform a computer move if necessary
-        /// </summary>
-        private async Task CheckComputerMove()
-        {
-            while (!game.GameOver && ((game.CurrentTurnBlack && blackIsComputer) || (!game.CurrentTurnBlack && whiteIsComputer)))
-            {
-                CancellationToken cancellationToken = cancelMoveComputation.Token;
-                if (config.UpdateEvalAfterBot)
-                {
-                    UpdateEvaluationMeter(null, game.CurrentTurnBlack);
-                }
-                BoardAnalysis.PossibleMove? bestMove = await GetEngineMove(cancellationToken);
-                if (bestMove is null || cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                if (bestMove.Value.Destination.X == -1 || bestMove.Value.Destination.Y == -1)
-                {
-                    _ = game.PassTurn();
-                }
-                else
-                {
-                    _ = game.PlaceStone(bestMove.Value.Destination, true);
-                }
-                UpdateGameDisplay();
-                movesScroll.ScrollToBottom();
-                if (config.UpdateEvalAfterBot)
-                {
-                    // Turn has been inverted already but we have value for the now old turn
-                    UpdateEvaluationMeter(bestMove, !game.CurrentTurnBlack);
-                }
-                PushEndgameMessage();
-            }
-        }
-
         private System.Drawing.Point GetCoordFromCanvasPoint(Point position)
         {
-            bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
+            bool boardFlipped = config.FlipBoard && game.CurrentTurn == 1;
             // Canvas coordinates are relative to top-left, whereas go's are from bottom-left, so y is inverted
             return new System.Drawing.Point((int)((boardFlipped ? goGameCanvas.ActualWidth - position.X : position.X) / tileWidth),
                 (int)((!boardFlipped ? goGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
         }
 
-        private async Task NewGame(int boardWidth, int boardHeight)
+        private void NewGame(int boardWidth, int boardHeight)
         {
-            cancelMoveComputation.Cancel();
-            cancelMoveComputation = new CancellationTokenSource();
             game = new GoGame(boardWidth, boardHeight, ScoringSystem.Area);
             inProcessDeadStoneBoard = null;
-            currentBestMove = null;
-            manuallyEvaluating = false;
-            blackEvaluation.Content = "?";
-            whiteEvaluation.Content = "?";
             UpdateGameDisplay();
-            await CheckComputerMove();
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateGameDisplay();
-            await CheckComputerMove();
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -562,7 +420,7 @@ namespace Go
             UpdateGameDisplay();
         }
 
-        private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
         {
             Point mousePos = Mouse.GetPosition(goGameCanvas);
             if (mousePos.X < 0 || mousePos.Y < 0
@@ -593,11 +451,9 @@ namespace Go
                     bool success = game.PlaceStone(destination);
                     if (success)
                     {
-                        currentBestMove = null;
                         UpdateGameDisplay();
                         movesScroll.ScrollToBottom();
                         PushEndgameMessage();
-                        await CheckComputerMove();
                         return;
                     }
                 }
@@ -623,86 +479,28 @@ namespace Go
             UpdateGameDisplay();
         }
 
-        private async void evaluation_MouseUp(object sender, MouseButtonEventArgs e)
+        private void NewGame_Click(object sender, RoutedEventArgs e)
         {
-            if (currentBestMove is not null || game.GameOver
-                || (game.CurrentTurnBlack && blackIsComputer) || (!game.CurrentTurnBlack && whiteIsComputer))
-            {
-                return;
-            }
-            manuallyEvaluating = true;
-            UpdateEvaluationMeter(null, game.CurrentTurnBlack);
-            UpdateGameDisplay();
-
-            CancellationToken cancellationToken = cancelMoveComputation.Token;
-            BoardAnalysis.PossibleMove? bestMove = await GetEngineMove(cancellationToken);
-            
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-
-            UpdateEvaluationMeter(bestMove, game.CurrentTurnBlack);
-            currentBestMove = bestMove;
-            UpdateGameDisplay();
-            manuallyEvaluating = false;
-        }
-
-        private async void NewGame_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = false;
-            whiteIsComputer = false;
-            await NewGame(19, 19);
-        }
-
-        private async void NewGameCpuBlack_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = false;
-            whiteIsComputer = true;
-            await NewGame(19, 19);
-        }
-
-        private async void NewGameCpuWhite_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = true;
-            whiteIsComputer = false;
-            await NewGame(19, 19);
-        }
-
-        private async void NewGameCpuOnly_Click(object sender, RoutedEventArgs e)
-        {
-            blackIsComputer = true;
-            whiteIsComputer = true;
-            await NewGame(19, 19);
+            NewGame(19, 19);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            cancelMoveComputation.Cancel();
             string jsonPath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "go-settings.json");
             File.WriteAllText(jsonPath, JsonConvert.SerializeObject(config));
         }
 
-        private async void CustomGame_Click(object sender, RoutedEventArgs e)
+        private void CustomGame_Click(object sender, RoutedEventArgs e)
         {
-            manuallyEvaluating = false;
-            cancelMoveComputation.Cancel();
-            cancelMoveComputation = new CancellationTokenSource();
             CustomGame customDialog = new();
             _ = customDialog.ShowDialog();
             if (customDialog.GeneratedGame is not null)
             {
                 game = customDialog.GeneratedGame;
                 inProcessDeadStoneBoard = null;
-                blackIsComputer = customDialog.BlackIsComputer;
-                whiteIsComputer = customDialog.WhiteIsComputer;
-                currentBestMove = null;
-                blackEvaluation.Content = "?";
-                whiteEvaluation.Content = "?";
                 UpdateGameDisplay();
                 PushEndgameMessage();
             }
-            await CheckComputerMove();
         }
 
         private void SettingsCheckItem_Click(object sender, RoutedEventArgs e)
@@ -726,44 +524,29 @@ namespace Go
             UpdateGameDisplay();
         }
 
-        private async void UndoMove_Click(object sender, RoutedEventArgs e)
+        private void UndoMove_Click(object sender, RoutedEventArgs e)
         {
-            if (game.PreviousGameState is not null
-                && ((game.CurrentTurnBlack && !blackIsComputer) || (!game.CurrentTurnBlack && !whiteIsComputer)))
+            if (game.PreviousGameState is not null)
             {
                 game = game.PreviousGameState;
-                if (blackIsComputer || whiteIsComputer)
-                {
-                    // Reverse two moves if the opponent is computer controlled
-                    game = game.PreviousGameState!;
-                }
 
                 inProcessDeadStoneBoard = null;
-                currentBestMove = null;
-                blackEvaluation.Content = "?";
-                whiteEvaluation.Content = "?";
-                manuallyEvaluating = false;
-                cancelMoveComputation.Cancel();
-                cancelMoveComputation = new CancellationTokenSource();
 
                 UpdateGameDisplay();
-                await CheckComputerMove();
             }
         }
 
-        private async void passMenuItem_OnClick(object sender, RoutedEventArgs e)
+        private void passMenuItem_OnClick(object sender, RoutedEventArgs e)
         {
-            if (!game.GameOver && ((game.CurrentTurnBlack && !blackIsComputer) || (!game.CurrentTurnBlack && !whiteIsComputer)))
+            if (!game.GameOver)
             {
                 _ = game.PassTurn();
 
                 squareHighlights.Clear();
                 lineHighlights.Clear();
-                currentBestMove = null;
                 UpdateGameDisplay();
                 movesScroll.ScrollToBottom();
                 PushEndgameMessage();
-                await CheckComputerMove();
             }
             else if (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null)
             {

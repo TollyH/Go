@@ -41,7 +41,7 @@
         <Border Grid.Column="1" Grid.RowSpan="3" BorderBrush="Black" BorderThickness="1,0,0,0">
             <StackPanel>
                 <Label Content="Click on Board to Place Stone" Margin="5,5,5,1" Padding="0,0,0,0" FontSize="14"/>
-                <Label Content="Left Click = Black, Right Click = White" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
+                <Label Content="Left Click = Cycle, Right Click = Remove" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
                 <Separator/>
                 <Label Content="Board Dimensions" Margin="5" Padding="0,0,0,0" FontSize="14"/>
                 <Label x:Name="boardWidthHeader" Content="Width (19)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
@@ -54,33 +54,29 @@
                 <RadioButton x:Name="scoringSelectTerritory" Margin="5,2,5,2" Content="Territory (Japanese)" GroupName="Scoring"/>
                 <RadioButton x:Name="scoringSelectStone" Margin="5,2,5,5" Content="Stone (Historical)" GroupName="Scoring"/>
                 <Separator/>
+                <Label x:Name="playerCountHeader" Content="Player Count (2)" Margin="5" Padding="0,0,0,0" FontSize="14"/>
+                <Grid>
+                    <Slider x:Name="playerCountSelect" Margin="5,2,5,2" SmallChange="1" Minimum="2" Maximum="10" Value="2" TickPlacement="BottomRight" IsSnapToTickEnabled="True" ValueChanged="playerCountSelect_ValueChanged"/>
+                </Grid>
+                <Separator/>
+                <Label x:Name="turnHeader" Content="Current Turn (1)" Margin="5" Padding="0,0,0,0" FontSize="14"/>
+                <Grid>
+                    <Slider x:Name="turnSelect" Margin="5,2,5,2" SmallChange="1" TickPlacement="BottomRight" IsSnapToTickEnabled="True" ValueChanged="turnSelect_ValueChanged" Maximum="1"/>
+                </Grid>
+                <Separator/>
                 <Label Content="Captures" Margin="5" Padding="0,0,0,0" FontSize="14"/>
-                <Label x:Name="blackCapturesHeader" Content="Black (0)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
-                <Slider x:Name="blackCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="180" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
-                <Label x:Name="whiteCapturesHeader" Content="White (0)" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
-                <Slider x:Name="whiteCapturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="181" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="CapturesSlider_ValueChanged"/>
-                <Separator/>
-                <Label Content="Komi (White Compensation)" Margin="5" Padding="0,0,0,0" FontSize="14"/>
-                <Label x:Name="komiHeader" Content="0" Margin="5,1,5,5" Padding="0,0,0,0" FontSize="11"/>
-                <Slider x:Name="komiSlider" Margin="5,1,5,5" Minimum="0" Maximum="25" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="KomiSlider_OnValueChanged"/>
-                <CheckBox x:Name="komiHalfPoint" Margin="5,2,10,5" HorizontalAlignment="Left" Content="Add Additional Half-Point" IsChecked="False"/>
-                <Separator/>
-                <Label Content="Current Turn" Margin="5" Padding="0,0,0,0" FontSize="14"/>
-                <Grid>
-                    <RadioButton x:Name="turnSelectBlack" Margin="5,2,5,2" Content="Black" GroupName="CurrentTurn" IsChecked="True"/>
-                    <CheckBox x:Name="computerSelectBlack" Margin="5,2,10,2" HorizontalAlignment="Right" Content="Computer Player" IsChecked="False"/>
-                </Grid>
-                <Grid>
-                    <RadioButton x:Name="turnSelectWhite" Margin="5,2,5,5" Content="White" GroupName="CurrentTurn"/>
-                    <CheckBox x:Name="computerSelectWhite" Margin="5,2,10,2" HorizontalAlignment="Right" Content="Computer Player" IsChecked="False"/>
-                </Grid>
+                <ComboBox x:Name="playerCapturesCombo" Margin="5,1,5,5" SelectedIndex="0" SelectionChanged="playerCapturesCombo_SelectionChanged">
+                    <ComboBoxItem Content="Player 1"/>
+                    <ComboBoxItem Content="Player 2"/>
+                </ComboBox>
+                <Slider x:Name="capturesSlider" Margin="5,1,5,5" Minimum="0" Maximum="180" SmallChange="1" LargeChange="1" Interval="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight" TickFrequency="1" Value="0" ValueChanged="capturesSlider_ValueChanged" AutoToolTipPlacement="BottomRight"/>
             </StackPanel>
         </Border>
         <Button x:Name="startButton" Content="Start" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="7" Width="50" Click="startButton_Click"/>
         <Button x:Name="importButton" Content="Load Board Text" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Padding="10,1,10,1" Margin="7" Click="importButton_Click"/>
         <Grid x:Name="importOverlay" Grid.ColumnSpan="2" Grid.Column="0" Grid.RowSpan="3" Background="White" Visibility="Collapsed">
             <Label Content="Enter a board position string:" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="16"/>
-            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn 0/0 0 b a"/>
+            <TextBox x:Name="boardTextInput" Margin="12,45,12,10" VerticalAlignment="Top" FontSize="15" Text="nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn/nnnnnnnnnnnnnnnnnnn 0/0 0 a"/>
             <Button x:Name="submitFenButton" Content="Submit" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10" Width="64" Click="submitFenButton_Click"/>
             <Button x:Name="cancelFenButton" Content="Cancel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="10,10,84,10" Width="64" Click="cancelFenButton_Click"/>
         </Grid>
