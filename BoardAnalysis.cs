@@ -358,7 +358,7 @@ namespace Go
 
                             PossibleMove? bestSubMove = MinimaxMove(gameClone,
                                 double.NegativeInfinity, double.PositiveInfinity, 1, maxDepth, thisLine, cancellationToken);
-                            
+
                             return (PossibleMove?)(bestSubMove is null ? null : new PossibleMove(thisPlacement,
                                 bestSubMove.Value.EvaluatedFutureValue, bestSubMove.Value.BestLine));
                         }, cancellationToken));
@@ -485,10 +485,6 @@ namespace Go
                     {
                         bestMove = new PossibleMove(new Point(-1, -1), passMove.Value.EvaluatedFutureValue, passMove.Value.BestLine);
                     }
-                    if (passMove.Value.EvaluatedFutureValue >= beta)
-                    {
-                        return bestMove;
-                    }
                 }
                 else
                 {
@@ -496,10 +492,6 @@ namespace Go
                         || passMove.Value.EvaluatedFutureValue < bestMove.Value.EvaluatedFutureValue)
                     {
                         bestMove = new PossibleMove(new Point(-1, -1), passMove.Value.EvaluatedFutureValue, passMove.Value.BestLine);
-                    }
-                    if (passMove.Value.EvaluatedFutureValue <= alpha)
-                    {
-                        return bestMove;
                     }
                 }
             }

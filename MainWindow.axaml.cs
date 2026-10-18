@@ -4,18 +4,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Shapes;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
+using Avalonia.Input;
+using Avalonia.Input.Platform;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Petzold.Media2D;
 
 namespace Go
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IDisposable
     {
         private GoGame game = new(19, 19, ScoringSystem.Area);
         private bool?[,]? inProcessDeadStoneBoard = null;
@@ -23,7 +27,7 @@ namespace Go
 
         private readonly HashSet<System.Drawing.Point> squareHighlights = new();
         private readonly HashSet<(System.Drawing.Point, System.Drawing.Point)> lineHighlights = new();
-        private System.Drawing.Point? mouseDownStartPoint = null;
+        private System.Drawing.Point? pointerPressedStartPoint = null;
 
         private bool blackIsComputer = false;
         private bool whiteIsComputer = false;
@@ -51,6 +55,18 @@ namespace Go
             updateEvalAfterBotItem.IsChecked = config.UpdateEvalAfterBot;
         }
 
+        ~MainWindow()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            cancelMoveComputation.Cancel();
+
+            GC.SuppressFinalize(this);
+        }
+
         public void UpdateGameDisplay()
         {
             goGameCanvas.Children.Clear();
@@ -61,8 +77,8 @@ namespace Go
             int boardWidth = game.Board.GetLength(0);
             int boardHeight = game.Board.GetLength(1);
 
-            tileWidth = goGameCanvas.ActualWidth / boardWidth;
-            tileHeight = goGameCanvas.ActualHeight / boardHeight;
+            tileWidth = goGameCanvas.Bounds.Width / boardWidth;
+            tileHeight = goGameCanvas.Bounds.Height / boardHeight;
 
             blackCaptures.Content = game.BlackCaptures;
             whiteCaptures.Content = game.WhiteCaptures;
@@ -108,7 +124,7 @@ namespace Go
             for (int i = 0; i < game.MoveText.Count; i++)
             {
                 string text = $"{i + 1}. {game.MoveText[i]}";
-                _ = movesPanel.Children.Add(new Label()
+                movesPanel.Children.Add(new Label()
                 {
                     Content = text,
                     FontSize = 18
@@ -128,7 +144,7 @@ namespace Go
                     Height = tileHeight,
                     Fill = new SolidColorBrush(config.LastMoveDestinationColor)
                 };
-                _ = goGameCanvas.Children.Add(destinationMoveHighlight);
+                goGameCanvas.Children.Add(destinationMoveHighlight);
                 Canvas.SetBottom(destinationMoveHighlight, (boardFlipped ? boardMaxY - lastMoveDestination.Y : lastMoveDestination.Y) * tileHeight);
                 Canvas.SetLeft(destinationMoveHighlight, (boardFlipped ? boardMaxX - lastMoveDestination.X : lastMoveDestination.X) * tileWidth);
 
@@ -145,7 +161,7 @@ namespace Go
                         Height = tileHeight,
                         Fill = new SolidColorBrush(config.BestMoveDestinationColor)
                     };
-                    _ = goGameCanvas.Children.Add(bestMoveDstHighlight);
+                    goGameCanvas.Children.Add(bestMoveDstHighlight);
                     Canvas.SetBottom(bestMoveDstHighlight,
                         (boardFlipped
                             ? boardMaxY - currentBestMove.Value.Destination.Y
@@ -207,7 +223,7 @@ namespace Go
                             Fill = stone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor),
                             Opacity = opacity
                         };
-                        _ = goGameCanvas.Children.Add(newStone);
+                        goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight);
                         Canvas.SetLeft(newStone, (boardFlipped ? boardMaxX - x : x) * tileWidth);
                     }
@@ -220,7 +236,7 @@ namespace Go
                             Height = tileHeight / 2,
                             Fill = scoredStone.Value ? new SolidColorBrush(config.BlackPieceColor) : new SolidColorBrush(config.WhitePieceColor)
                         };
-                        _ = goGameCanvas.Children.Add(newStone);
+                        goGameCanvas.Children.Add(newStone);
                         Canvas.SetBottom(newStone, (boardFlipped ? boardMaxY - y : y) * tileHeight + (tileHeight / 4));
                         Canvas.SetLeft(newStone, (boardFlipped ? boardMaxX - x : x) * tileWidth + (tileWidth / 4));
                     }
@@ -232,7 +248,7 @@ namespace Go
                             Height = tileHeight,
                             Fill = new SolidColorBrush(config.IllegalMoveColor)
                         };
-                        _ = goGameCanvas.Children.Add(illegalMoveHighlight);
+                        goGameCanvas.Children.Add(illegalMoveHighlight);
                         Canvas.SetBottom(illegalMoveHighlight,
                             (boardFlipped ? boardMaxY - y : y) * tileHeight);
                         Canvas.SetLeft(illegalMoveHighlight,
@@ -250,7 +266,7 @@ namespace Go
                     Width = tileWidth * 0.8,
                     Height = tileHeight * 0.8
                 };
-                _ = goGameCanvas.Children.Add(ellipse);
+                goGameCanvas.Children.Add(ellipse);
                 Canvas.SetBottom(ellipse, ((boardFlipped ? boardMaxY - square.Y : square.Y) * tileHeight) + (tileHeight * 0.1));
                 Canvas.SetLeft(ellipse, (boardFlipped ? boardMaxX - square.X : square.X) * tileWidth + (tileWidth * 0.1));
             }
@@ -258,33 +274,34 @@ namespace Go
             foreach ((System.Drawing.Point lineStart, System.Drawing.Point lineEnd) in lineHighlights)
             {
                 double arrowLength = Math.Min(tileWidth, tileHeight) / 4;
-                Petzold.Media2D.ArrowLine line = new()
+                ArrowLine line = new()
                 {
                     Stroke = Brushes.Blue,
                     Fill = Brushes.Blue,
                     Opacity = 0.5,
                     StrokeThickness = 10,
                     ArrowLength = arrowLength,
-                    ArrowAngle = 45,
+                    ArrowAngle = 0.785,
                     IsArrowClosed = true,
+                    ArrowEnds = ArrowEnds.End,
                     X1 = (boardFlipped ? boardMaxX - lineStart.X : lineStart.X) * tileWidth + (tileWidth / 2),
                     X2 = (boardFlipped ? boardMaxX - lineEnd.X : lineEnd.X) * tileWidth + (tileWidth / 2),
                     Y1 = (boardFlipped ? lineStart.Y : boardMaxY - lineStart.Y) * tileHeight + (tileHeight / 2),
                     Y2 = (boardFlipped ? lineEnd.Y : boardMaxY - lineEnd.Y) * tileHeight + (tileHeight / 2)
                 };
-                _ = goGameCanvas.Children.Add(line);
+                goGameCanvas.Children.Add(line);
             }
 
             goBoardBackground.Children.Clear();
 
             for (int x = 0; x < boardWidth; x++)
             {
-                _ = goBoardBackground.Children.Add(new Rectangle()
+                goBoardBackground.Children.Add(new Rectangle()
                 {
                     Margin = new Thickness((tileWidth * x) + (tileWidth / 2), 0, 0, -1),
                     Fill = new SolidColorBrush(Color.FromArgb(191, 0, 0, 0)),
                     StrokeThickness = 0,
-                    Height = goGameCanvas.ActualHeight - tileHeight,
+                    Height = goGameCanvas.Bounds.Height - tileHeight,
                     HorizontalAlignment = HorizontalAlignment.Left,
                     Width = 2
                 });
@@ -292,12 +309,12 @@ namespace Go
 
             for (int y = 0; y < boardHeight; y++)
             {
-                _ = goBoardBackground.Children.Add(new Rectangle()
+                goBoardBackground.Children.Add(new Rectangle()
                 {
                     Margin = new Thickness(0, (tileHeight * y) + (tileHeight / 2), -1, 0),
                     Fill = new SolidColorBrush(Color.FromArgb(191, 0, 0, 0)),
                     StrokeThickness = 0,
-                    Width = goGameCanvas.ActualWidth - tileWidth,
+                    Width = goGameCanvas.Bounds.Width - tileWidth,
                     VerticalAlignment = VerticalAlignment.Top,
                     Height = 2
                 });
@@ -305,28 +322,28 @@ namespace Go
 
             if (boardWidth % 2 == 1 && boardHeight % 2 == 1)
             {
-                boardCenterDot.Visibility = Visibility.Visible;
-                boardCenterDot.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f, (goGameCanvas.ActualHeight / 2f) - 7f);
-                boardDot5.Visibility = Visibility.Visible;
-                boardDot6.Visibility = Visibility.Visible;
-                boardDot7.Visibility = Visibility.Visible;
-                boardDot8.Visibility = Visibility.Visible;
+                boardCenterDot.IsVisible = true;
+                boardCenterDot.Margin = new Thickness(0, 0, (goGameCanvas.Bounds.Width / 2f) - 7f, (goGameCanvas.Bounds.Height / 2f) - 7f);
+                boardDot5.IsVisible = true;
+                boardDot6.IsVisible = true;
+                boardDot7.IsVisible = true;
+                boardDot8.IsVisible = true;
             }
             else
             {
-                boardCenterDot.Visibility = Visibility.Collapsed;
-                boardDot5.Visibility = Visibility.Collapsed;
-                boardDot6.Visibility = Visibility.Collapsed;
-                boardDot7.Visibility = Visibility.Collapsed;
-                boardDot8.Visibility = Visibility.Collapsed;
+                boardCenterDot.IsVisible = false;
+                boardDot5.IsVisible = false;
+                boardDot6.IsVisible = false;
+                boardDot7.IsVisible = false;
+                boardDot8.IsVisible = false;
             }
 
             if (boardWidth >= 13 && boardHeight >= 13)
             {
-                boardDot1.Visibility = Visibility.Visible;
-                boardDot2.Visibility = Visibility.Visible;
-                boardDot3.Visibility = Visibility.Visible;
-                boardDot4.Visibility = Visibility.Visible;
+                boardDot1.IsVisible = true;
+                boardDot2.IsVisible = true;
+                boardDot3.IsVisible = true;
+                boardDot4.IsVisible = true;
 
                 boardDot1.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 3)) - (tileWidth / 2) - 7f,
                     (tileHeight * (boardHeight - 3)) - (tileHeight / 2) - 7f);
@@ -337,25 +354,25 @@ namespace Go
                 boardDot4.Margin = new Thickness(0, 0, (tileWidth * 3) + (tileWidth / 2) - 7f,
                     (tileHeight * 3) + (tileHeight / 2) - 7f);
 
-                boardDot5.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                boardDot5.Margin = new Thickness(0, 0, (goGameCanvas.Bounds.Width / 2f) - 7f,
                     (tileHeight * (boardHeight - 3)) - (tileHeight / 2) - 7f);
                 boardDot6.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 3)) - (tileWidth / 2) - 7f,
-                    (goGameCanvas.ActualHeight / 2f) - 7f);
+                    (goGameCanvas.Bounds.Height / 2f) - 7f);
                 boardDot7.Margin = new Thickness(0, 0, (tileWidth * 3) + (tileWidth / 2) - 7f,
-                    (goGameCanvas.ActualHeight / 2f) - 7f);
-                boardDot8.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                    (goGameCanvas.Bounds.Height / 2f) - 7f);
+                boardDot8.Margin = new Thickness(0, 0, (goGameCanvas.Bounds.Width / 2f) - 7f,
                     (tileHeight * 3) + (tileHeight / 2) - 7f);
             }
             else if (boardWidth >= 8 && boardHeight >= 8)
             {
-                boardDot1.Visibility = Visibility.Visible;
-                boardDot2.Visibility = Visibility.Visible;
-                boardDot3.Visibility = Visibility.Visible;
-                boardDot4.Visibility = Visibility.Visible;
-                boardDot5.Visibility = Visibility.Visible;
-                boardDot6.Visibility = Visibility.Visible;
-                boardDot7.Visibility = Visibility.Visible;
-                boardDot8.Visibility = Visibility.Visible;
+                boardDot1.IsVisible = true;
+                boardDot2.IsVisible = true;
+                boardDot3.IsVisible = true;
+                boardDot4.IsVisible = true;
+                boardDot5.IsVisible = true;
+                boardDot6.IsVisible = true;
+                boardDot7.IsVisible = true;
+                boardDot8.IsVisible = true;
 
                 boardDot1.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 2)) - (tileWidth / 2) - 7f,
                     (tileHeight * (boardHeight - 2)) - (tileHeight / 2) - 7f);
@@ -366,42 +383,42 @@ namespace Go
                 boardDot4.Margin = new Thickness(0, 0, (tileWidth * 2) + (tileWidth / 2) - 7f,
                     (tileHeight * 2) + (tileHeight / 2) - 7f);
 
-                boardDot5.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                boardDot5.Margin = new Thickness(0, 0, (goGameCanvas.Bounds.Width / 2f) - 7f,
                     (tileHeight * (boardHeight - 2)) - (tileHeight / 2) - 7f);
                 boardDot6.Margin = new Thickness(0, 0, (tileWidth * (boardWidth - 2)) - (tileWidth / 2) - 7f,
-                    (goGameCanvas.ActualHeight / 2f) - 7f);
+                    (goGameCanvas.Bounds.Height / 2f) - 7f);
                 boardDot7.Margin = new Thickness(0, 0, (tileWidth * 2) + (tileWidth / 2) - 7f,
-                    (goGameCanvas.ActualHeight / 2f) - 7f);
-                boardDot8.Margin = new Thickness(0, 0, (goGameCanvas.ActualWidth / 2f) - 7f,
+                    (goGameCanvas.Bounds.Height / 2f) - 7f);
+                boardDot8.Margin = new Thickness(0, 0, (goGameCanvas.Bounds.Width / 2f) - 7f,
                     (tileHeight * 2) + (tileHeight / 2) - 7f);
             }
             else
             {
-                boardDot1.Visibility = Visibility.Collapsed;
-                boardDot2.Visibility = Visibility.Collapsed;
-                boardDot3.Visibility = Visibility.Collapsed;
-                boardDot4.Visibility = Visibility.Collapsed;
-                boardDot5.Visibility = Visibility.Collapsed;
-                boardDot6.Visibility = Visibility.Collapsed;
-                boardDot7.Visibility = Visibility.Collapsed;
-                boardDot8.Visibility = Visibility.Collapsed;
+                boardDot1.IsVisible = false;
+                boardDot2.IsVisible = false;
+                boardDot3.IsVisible = false;
+                boardDot4.IsVisible = false;
+                boardDot5.IsVisible = false;
+                boardDot6.IsVisible = false;
+                boardDot7.IsVisible = false;
+                boardDot8.IsVisible = false;
             }
         }
 
         /// <summary>
         /// If the game has ended, alert the user how it ended, otherwise do nothing
         /// </summary>
-        private void PushEndgameMessage()
+        private async Task PushEndgameMessage()
         {
             if (game.GameOver)
             {
                 if (game.AwaitingDeadStoneRemoval)
                 {
-                    MessageBoxResult result = MessageBox.Show(
+                    MessageBoxResult result = await new MessageBox(
                         "Both players have passed their turn." + Environment.NewLine +
                         "If you agree to end the game now, click 'Yes'. " + Environment.NewLine +
                         "If you wish to continue play instead, click 'No'.",
-                        "Two passes", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                        "Two passes", MessageBoxButton.YesNo, MessageBoxImage.Information).ShowDialog<MessageBoxResult>(this);
                     if (result == MessageBoxResult.No)
                     {
                         game.GameOver = false;
@@ -411,11 +428,11 @@ namespace Go
                     else
                     {
                         inProcessDeadStoneBoard = game.Board.TwoDimensionalClone();
-                        _ = MessageBox.Show(
+                        await new MessageBox(
                             "To mark a group of stones as dead, click on them." + Environment.NewLine +
                             "To revert a group to being alive, click it again. " + Environment.NewLine +
                             "Once you've finished, press the Pass Turn button again. ",
-                            "Dead stone removal", MessageBoxButton.OK, MessageBoxImage.Information);
+                            "Dead stone removal", MessageBoxButton.OK, MessageBoxImage.Information).ShowDialog(this);
                     }
                     UpdateGameDisplay();
                 }
@@ -424,11 +441,13 @@ namespace Go
                     double finalScore = BoardAnalysis.CalculateGameValue(game, game.CurrentScoring);
                     string message = finalScore switch
                     {
+                        // ReSharper disable CompareOfFloatsByEqualityOperator
                         > 0 => $"Black wins by {finalScore} point{(finalScore != 1 ? "s" : "")}.",
                         < 0 => $"White wins by {-finalScore} point{(finalScore != -1 ? "s" : "")}.",
+                        // ReSharper restore CompareOfFloatsByEqualityOperator
                         _ => "The game is a draw"
                     };
-                    _ = MessageBox.Show(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await new MessageBox(message, "Game over", MessageBoxButton.OK, MessageBoxImage.Information).ShowDialog(this);
                 }
             }
         }
@@ -439,7 +458,7 @@ namespace Go
             if (bestMove is null)
             {
                 toUpdate.Content = "...";
-                toUpdate.ToolTip = null;
+                ToolTip.SetTip(toUpdate, null);
                 return;
             }
 
@@ -459,7 +478,7 @@ namespace Go
                 }
                 convertedBestLine += " " + moveStringGenerator.MoveText[^1];
             }
-            toUpdate.ToolTip = convertedBestLine.Trim();
+            ToolTip.SetTip(toUpdate, convertedBestLine.Trim());
         }
 
         /// <summary>
@@ -498,13 +517,13 @@ namespace Go
                     _ = game.PlaceStone(bestMove.Value.Destination, true);
                 }
                 UpdateGameDisplay();
-                movesScroll.ScrollToBottom();
+                movesScroll.ScrollToEnd();
                 if (config.UpdateEvalAfterBot)
                 {
                     // Turn has been inverted already but we have value for the now old turn
                     UpdateEvaluationMeter(bestMove, !game.CurrentTurnBlack);
                 }
-                PushEndgameMessage();
+                await PushEndgameMessage();
             }
         }
 
@@ -512,8 +531,8 @@ namespace Go
         {
             bool boardFlipped = config.FlipBoard && ((!game.CurrentTurnBlack && !whiteIsComputer) || (blackIsComputer && !whiteIsComputer));
             // Canvas coordinates are relative to top-left, whereas go's are from bottom-left, so y is inverted
-            return new System.Drawing.Point((int)((boardFlipped ? goGameCanvas.ActualWidth - position.X : position.X) / tileWidth),
-                (int)((!boardFlipped ? goGameCanvas.ActualHeight - position.Y : position.Y) / tileHeight));
+            return new System.Drawing.Point((int)((boardFlipped ? goGameCanvas.Bounds.Width - position.X : position.X) / tileWidth),
+                (int)((!boardFlipped ? goGameCanvas.Bounds.Height - position.Y : position.Y) / tileHeight));
         }
 
         private async Task NewGame(int boardWidth, int boardHeight)
@@ -539,13 +558,12 @@ namespace Go
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateGameDisplay();
-            moveListColumn.Width = ActualWidth < 900 ? new GridLength(0) : new GridLength(210);
         }
 
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        private void Window_PointerPressed(object sender, PointerPressedEventArgs e)
         {
-            Point mousePos = Mouse.GetPosition(goGameCanvas);
-            if (e.ChangedButton == MouseButton.Left)
+            Point mousePos = e.GetPosition(goGameCanvas);
+            if (e.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonPressed)
             {
                 squareHighlights.Clear();
                 lineHighlights.Clear();
@@ -553,24 +571,24 @@ namespace Go
             else
             {
                 if (mousePos.X < 0 || mousePos.Y < 0
-                    || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
+                    || mousePos.X > goGameCanvas.Bounds.Width || mousePos.Y > goGameCanvas.Bounds.Height)
                 {
                     return;
                 }
-                mouseDownStartPoint = GetCoordFromCanvasPoint(mousePos);
+                pointerPressedStartPoint = GetCoordFromCanvasPoint(mousePos);
             }
             UpdateGameDisplay();
         }
 
-        private async void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        private async void Window_PointerReleased(object sender, PointerReleasedEventArgs e)
         {
-            Point mousePos = Mouse.GetPosition(goGameCanvas);
+            Point mousePos = e.GetPosition(goGameCanvas);
             if (mousePos.X < 0 || mousePos.Y < 0
-                || mousePos.X > goGameCanvas.ActualWidth || mousePos.Y > goGameCanvas.ActualHeight)
+                || mousePos.X > goGameCanvas.Bounds.Width || mousePos.Y > goGameCanvas.Bounds.Height)
             {
                 return;
             }
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonReleased)
             {
                 System.Drawing.Point destination = GetCoordFromCanvasPoint(mousePos);
                 if (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null)
@@ -595,8 +613,8 @@ namespace Go
                     {
                         currentBestMove = null;
                         UpdateGameDisplay();
-                        movesScroll.ScrollToBottom();
-                        PushEndgameMessage();
+                        movesScroll.ScrollToEnd();
+                        await PushEndgameMessage();
                         await CheckComputerMove();
                         return;
                     }
@@ -605,7 +623,7 @@ namespace Go
             else
             {
                 System.Drawing.Point onSquare = GetCoordFromCanvasPoint(mousePos);
-                if (mouseDownStartPoint is null || mouseDownStartPoint == onSquare)
+                if (pointerPressedStartPoint is null || pointerPressedStartPoint == onSquare)
                 {
                     if (!squareHighlights.Add(onSquare))
                     {
@@ -614,16 +632,16 @@ namespace Go
                 }
                 else
                 {
-                    if (!lineHighlights.Add((mouseDownStartPoint.Value, onSquare)))
+                    if (!lineHighlights.Add((pointerPressedStartPoint.Value, onSquare)))
                     {
-                        _ = lineHighlights.Remove((mouseDownStartPoint.Value, onSquare));
+                        _ = lineHighlights.Remove((pointerPressedStartPoint.Value, onSquare));
                     }
                 }
             }
             UpdateGameDisplay();
         }
 
-        private async void evaluation_MouseUp(object sender, MouseButtonEventArgs e)
+        private async void evaluation_PointerReleased(object sender, PointerReleasedEventArgs e)
         {
             if (currentBestMove is not null || game.GameOver
                 || (game.CurrentTurnBlack && blackIsComputer) || (!game.CurrentTurnBlack && whiteIsComputer))
@@ -636,7 +654,7 @@ namespace Go
 
             CancellationToken cancellationToken = cancelMoveComputation.Token;
             BoardAnalysis.PossibleMove? bestMove = await GetEngineMove(cancellationToken);
-            
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
@@ -676,7 +694,7 @@ namespace Go
             await NewGame(19, 19);
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void Window_Closing(object sender, WindowClosingEventArgs e)
         {
             cancelMoveComputation.Cancel();
             string jsonPath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "go-settings.json");
@@ -689,7 +707,7 @@ namespace Go
             cancelMoveComputation.Cancel();
             cancelMoveComputation = new CancellationTokenSource();
             CustomGame customDialog = new();
-            _ = customDialog.ShowDialog();
+            await customDialog.ShowDialog(this);
             if (customDialog.GeneratedGame is not null)
             {
                 game = customDialog.GeneratedGame;
@@ -700,7 +718,7 @@ namespace Go
                 blackEvaluation.Content = "?";
                 whiteEvaluation.Content = "?";
                 UpdateGameDisplay();
-                PushEndgameMessage();
+                await PushEndgameMessage();
             }
             await CheckComputerMove();
         }
@@ -714,14 +732,18 @@ namespace Go
             UpdateGameDisplay();
         }
 
-        private void FENCopy_Click(object sender, RoutedEventArgs e)
+        private async void FENCopy_Click(object sender, RoutedEventArgs e)
         {
-            Clipboard.SetText(game.ToString());
+            if (Clipboard is null)
+            {
+                return;
+            }
+            await Clipboard.SetTextAsync(game.ToString());
         }
 
-        private void CustomiseItem_Click(object sender, RoutedEventArgs e)
+        private async void CustomiseItem_Click(object sender, RoutedEventArgs e)
         {
-            _ = new Customisation(config).ShowDialog();
+            await new Customisation(config).ShowDialog(this);
             goBoardBackground.Background = new SolidColorBrush(config.BoardColor);
             UpdateGameDisplay();
         }
@@ -761,8 +783,8 @@ namespace Go
                 lineHighlights.Clear();
                 currentBestMove = null;
                 UpdateGameDisplay();
-                movesScroll.ScrollToBottom();
-                PushEndgameMessage();
+                movesScroll.ScrollToEnd();
+                await PushEndgameMessage();
                 await CheckComputerMove();
             }
             else if (game.AwaitingDeadStoneRemoval && inProcessDeadStoneBoard is not null)
@@ -771,7 +793,7 @@ namespace Go
                 game.AwaitingDeadStoneRemoval = false;
                 inProcessDeadStoneBoard = null;
                 UpdateGameDisplay();
-                PushEndgameMessage();
+                await PushEndgameMessage();
             }
         }
     }

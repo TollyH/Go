@@ -1,6 +1,6 @@
 # Go
 
-A go game with a computer player made in C# with WPF
+A go game with a computer player made in C# with Avalonia
 
 ## Features
 
@@ -16,4 +16,4 @@ A go game with a computer player made in C# with WPF
 
 ---
 
-**Copyright © 2023  Ptolemy Hill**
+**Copyright © 2023-2026  Ptolemy Hill**
