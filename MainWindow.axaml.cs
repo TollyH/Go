@@ -277,7 +277,6 @@ namespace Go
                 ArrowLine line = new()
                 {
                     Stroke = Brushes.Blue,
-                    Fill = Brushes.Blue,
                     Opacity = 0.5,
                     StrokeThickness = 10,
                     ArrowLength = arrowLength,
